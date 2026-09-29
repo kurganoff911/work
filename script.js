@@ -260,9 +260,9 @@ document.addEventListener('DOMContentLoaded', function () {
     cloneNetworks();
   });
 
-  // Контроллер: если controller-1 = "Удалить", блокируем controller-2,3,4
+  // Контроллер: если controller-1 = "Удалить", блокируем controller-2,3,4 и select-59
   document.getElementById('controller-1').addEventListener('change', function () {
-    const controllerKeys = ['controller-2', 'controller-3', 'controller-4'];
+    const controllerKeys = ['controller-2', 'controller-3', 'controller-4', 'select-59'];
     const shouldDisable = this.selectedOptions[0].text.includes('Удалить');
     controllerKeys.forEach(key => {
       const el = document.getElementById(key);
@@ -360,7 +360,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // 3. Проверяем controller-1 — если "Удалить", исключаем controller-2,3,4
     const controller1Row = allRows.find(r => r.selectId === 'controller-1');
     const excludeController = controller1Row && controller1Row.selectedValue.includes('Удалить');
-    const controllerKeysToExclude = ['controller-2', 'controller-3', 'controller-4'];
+    const controllerKeysToExclude = ['controller-2', 'controller-3', 'controller-4', 'select-59'];
 
     // 4. Проверяем hba-1 — если "Удалить", исключаем hba-2, hba-3, hba-4
     const hba1Row = allRows.find(r => r.selectId === 'hba-1');
@@ -616,7 +616,7 @@ function applyPreset(presetName) {
             gpu1Init.dispatchEvent(new Event('change'));
           }
           
-          // Инициализируем controller-1: если "Удалить", блокируем controller-2,3,4
+          // Инициализируем controller-1: если "Удалить", блокируем controller-2,3,4 и select-59
           const controller1Init = document.getElementById('controller-1');
           if (controller1Init) {
             controller1Init.dispatchEvent(new Event('change'));
