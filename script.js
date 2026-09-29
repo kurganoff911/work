@@ -250,12 +250,23 @@ function updateDrive6() {
 
 // Проверка и подсветка строк
 function checkRows() {
+  const driveCount = parseInt(document.getElementById('driveCount').value) || 0;
+  const driveContainer = document.getElementById('drive-container');
+  
+  // Скрываем/показываем весь контейнер drive-строк
+  if (driveContainer) {
+    driveContainer.style.display = driveCount === 0 ? 'none' : '';
+  }
+  
   const table = document.getElementById('dataTable');
   const rows = table.querySelectorAll('tbody tr');
   
   rows.forEach(row => {
     const select = row.querySelector('select');
     if (select) {
+      // Пропускаем drive-строки — они управляются через drive-container
+      if (select.id && select.id.startsWith('drive-')) return;
+      
       // Скрываем network-6-N при блокировке (Ethernet)
       if (select.id && /^network-6/.test(select.id) && select.disabled) {
         row.style.display = 'none';
@@ -291,6 +302,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   document.getElementById('driveCount').addEventListener('input', function () {
     cloneDrives();
+    checkRows();
   });
 
   document.getElementById('applyDriveBtn').addEventListener('click', function () {
@@ -443,6 +455,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const controller3Row = allRows.find(r => r.selectId === 'controller-3');
     const excludeController2 = controller3Row && controller3Row.selectedValue.includes('Удалить');
 
+    // 6. Проверяем driveCount — если 0, исключаем все drive-строки
+    const driveCount = parseInt(document.getElementById('driveCount').value) || 0;
+    const excludeDrives = driveCount === 0;
+
       // 4. Собираем drive-данные с учётом типов
     const driveRows = allRows.filter(r => r.selectId && r.selectId.startsWith('drive-'));
     const driveByType = {};
@@ -489,6 +505,9 @@ document.addEventListener('DOMContentLoaded', function () {
     allRows.forEach(item => {
       // Пропускаем строки, если выбрано "Удалить"
       if (item.selectedValue.includes('Удалить')) return;
+
+      // Пропускаем drive-строки, если driveCount = 0
+      if (excludeDrives && item.selectId && item.selectId.startsWith('drive-')) return;
 
       // Пропускаем gpu-строки, если gpu-1 = "Удалить"
       if (excludeGpu && gpuKeysToExclude.includes(item.selectId)) return;
