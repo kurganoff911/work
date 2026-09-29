@@ -65,6 +65,7 @@ function cloneDrives() {
       const cells = clone.querySelectorAll('td');
       cells.forEach(cell => {
         cell.innerHTML = cell.innerHTML.replace(/\(тип \d+\)/g, `(тип ${type})`);
+        cell.innerHTML = cell.innerHTML.replace(/Тип \d+/g, `Тип ${type}`);
       });
       
       container.appendChild(clone);
@@ -132,17 +133,50 @@ function cloneNetworks() {
         }
       }
       
-      // Заменяем "(тип 1)" на "(тип 2)" и т.д.
+      // Заменяем "(тип 1)" на "(тип 2)" и т.д. (регистронезависимо)
       const cells = clone.querySelectorAll('td');
       cells.forEach(cell => {
-        cell.innerHTML = cell.innerHTML.replace(/\(тип \d+\)/g, `(тип ${type})`);
+        cell.innerHTML = cell.innerHTML.replace(/\(Тип \d+\)/gi, `(Тип ${type})`);
       });
       
       container.appendChild(clone);
     });
   }
   
-  // Скрываем строки с пустыми селекторами
+  // После клонирования проверяем network-6 для каждого типа
+  updateNetwork6AfterClone(count);
+}
+
+// Обновление network-6 для каждого типа
+function updateNetwork6AfterClone(count) {
+  // Базовый network-6 проверяет network-2
+  const network2 = document.getElementById('network-2');
+  const network6 = document.getElementById('network-6');
+  if (network2 && network6) {
+    const isEthernet = network2.selectedOptions[0].text === 'Ethernet';
+    network6.disabled = isEthernet;
+    if (isEthernet) {
+      network6.value = '';
+    } else {
+      network6.value = network6.options[0] ? network6.options[0].value : '';
+    }
+  }
+  
+  // Клонированные network-6-N проверяют network-2-N
+  for (let type = 2; type <= count; type++) {
+    const network2Clone = document.getElementById(`network-2-${type}`);
+    const network6Clone = document.getElementById(`network-6-${type}`);
+    if (network2Clone && network6Clone) {
+      const isEthernet = network2Clone.selectedOptions[0].text === 'Ethernet';
+      network6Clone.disabled = isEthernet;
+      if (isEthernet) {
+        network6Clone.value = '';
+      } else {
+        network6Clone.value = network6Clone.options[0] ? network6Clone.options[0].value : '';
+      }
+    }
+  }
+  
   checkRows();
 }
 
@@ -171,15 +205,18 @@ function updateNetwork6() {
   const selectedText = network2.selectedOptions[0].text;
   const isEthernet = selectedText === 'Ethernet';
   
-  const network6Selects = document.querySelectorAll('[id^="network-6"]');
-  network6Selects.forEach(select => {
-    select.disabled = isEthernet;
-    if (isEthernet) {
-      select.value = '';
-    } else {
-      select.value = select.options[0] ? select.options[0].value : '';
-    }
-  });
+  // Обновляем ТОЛЬКО базовый network-6
+  const network6 = document.getElementById('network-6');
+  if (!network6) return;
+  
+  network6.disabled = isEthernet;
+  if (isEthernet) {
+    network6.value = '';
+  } else {
+    network6.value = network6.options[0] ? network6.options[0].value : '';
+  }
+  
+  checkRows();
 }
 
 // По умолчанию блокируем все network-6
@@ -219,6 +256,13 @@ function checkRows() {
   rows.forEach(row => {
     const select = row.querySelector('select');
     if (select) {
+      // Скрываем network-6-N при блокировке (Ethernet)
+      if (select.id && /^network-6/.test(select.id) && select.disabled) {
+        row.style.display = 'none';
+        row.style.removeProperty('background-color');
+        return;
+      }
+      
       const selectedValue = select.selectedOptions[0] ? select.selectedOptions[0].text : '';
       if (!selectedValue || selectedValue.trim() === '') {
         row.style.display = 'none';
@@ -227,6 +271,7 @@ function checkRows() {
         row.style.display = '';
         row.style.backgroundColor = '#F08080';
       } else if (select.disabled) {
+        // Остальные disabled (одно значение) — показываем с зелёным фоном
         row.style.display = '';
         row.style.backgroundColor = '#90EE90';
       } else {
@@ -328,6 +373,33 @@ document.addEventListener('DOMContentLoaded', function () {
   document.getElementById('drive-5').addEventListener('change', updateDrive6);
   document.getElementById('network-2').addEventListener('change', updateNetwork6);
 
+  // Делегирование событий для клонированных network-2-N
+  const networkContainer = document.getElementById('network-container');
+  if (networkContainer) {
+    networkContainer.addEventListener('change', function (e) {
+      const select = e.target;
+      const match = select.id.match(/^network-(\d+)-(\d+)$/);
+      if (match) {
+        const index = parseInt(match[1]);
+        const type = parseInt(match[2]);
+        // Если изменился network-N-TYPE, проверяем network-6-TYPE
+        if (index === 2) {
+          const network6Clone = document.getElementById(`network-6-${type}`);
+          if (network6Clone) {
+            const isEthernet = select.selectedOptions[0].text === 'Ethernet';
+            network6Clone.disabled = isEthernet;
+            if (isEthernet) {
+              network6Clone.value = '';
+            } else {
+              network6Clone.value = network6Clone.options[0] ? network6Clone.options[0].value : '';
+            }
+            checkRows();
+          }
+        }
+      }
+    });
+  }
+
   // Скрываем строки с пустыми селекторами при изменении любого селектора
   const allSelects = document.querySelectorAll('#dataTable tbody select');
   allSelects.forEach(select => {
@@ -402,10 +474,16 @@ document.addEventListener('DOMContentLoaded', function () {
       drive5Values[type][baseIndex] = row.selectedValue;
     });
 
-    // 7. Проверяем network-2: network-6 по умолчанию заблокирована и исключена из выгрузки
-    //    Разблокируется и включается в выгрузку только если network-2 ≠ Ethernet
-    const network6Selects = document.querySelectorAll('[id^="network-6"]');
-    const network6Disabled = Array.from(network6Selects).every(select => select.disabled);
+    // 7. Проверяем network-2-N: network-6-N исключается из выгрузки если network-2-N = Ethernet
+    const allNetwork6Selects = document.querySelectorAll('[id^="network-6"]');
+    const network6DisabledMap = {};
+    allNetwork6Selects.forEach(select => {
+      const match = select.id.match(/^network-6(-(\d+))?$/);
+      if (match) {
+        const type = match[2] ? parseInt(match[2]) : 1;
+        network6DisabledMap[type] = select.disabled;
+      }
+    });
 
     // 5. Собираем данные с учётом исключений
     allRows.forEach(item => {
@@ -438,8 +516,14 @@ document.addEventListener('DOMContentLoaded', function () {
         if (drive5Value !== 'HDD') return;
       }
 
-      // Пропускаем network-6, если заблокирована (по умолчанию)
-      if (network6Disabled && item.selectId && /^network-6/.test(item.selectId)) return;
+      // Пропускаем network-6-N, если заблокирована (network-2-N = Ethernet)
+      if (item.selectId && /^network-6/.test(item.selectId)) {
+        const parts = item.selectId.split('-');
+        const baseIndex = parseInt(parts[1]);
+        const typeMatch = item.selectId.match(/-(\d+)$/);
+        const type = typeMatch ? parseInt(typeMatch[1]) : 1;
+        if (network6DisabledMap[type]) return;
+      }
 
       data.push([item.fixedValue1, item.selectedValue, item.fixedValue2]);
     });
@@ -601,11 +685,11 @@ function applyPreset(presetName) {
           const networkCount = parseInt(document.getElementById('networkCount').value) || 1;
           if (networkCount > 1) {
             cloneNetworks();
+          } else {
+            // Если нет клонирования, блокируем network-6 по умолчанию
+            initNetwork6();
+            updateNetwork6();
           }
-          
-          // В конце — блокируем network-6 по умолчанию и проверяем network-2
-          initNetwork6();
-          updateNetwork6();
           
           // Проверка и подсветка строк
           checkRows();
