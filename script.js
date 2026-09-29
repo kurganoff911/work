@@ -1,0 +1,668 @@
+const PRESET_FILES = {
+  'standart': 'standart.json',
+  'urgent': 'urgent.json',
+  'custom': 'custom.json'
+};
+
+const COMMON_FILES = [
+  'processors.json',
+  'memory.json',
+  'storage.json',
+  'controllers.json',
+  'network.json',
+  'gpu.json',
+  'power.json'
+];
+
+const PRESETS_PATH = 'presets/';
+let currentPreset = localStorage.getItem('currentPreset') || 'standart';
+let driveOptions = {};
+let networkOptions = {};
+
+// Клонирование drive-строк
+function cloneDrives() {
+  const count = parseInt(document.getElementById('driveCount').value) || 1;
+  if (count < 1) return;
+  
+  const container = document.getElementById('drive-container');
+  if (!container) return;
+  
+  // Удаляем все клонированные строки (кроме базовых)
+  const existingClones = container.querySelectorAll('tr.clone');
+  existingClones.forEach(row => row.remove());
+  
+  // Если только 1 тип, ничего не клонируем
+  if (count === 1) return;
+  
+  // Запрашиваем базовые строки ПОСЛЕ удаления клонов
+  const baseRows = container.querySelectorAll('tr');
+  console.log('baseRows found:', baseRows.length);
+  
+  // Клонируем строки для каждого дополнительного типа
+  for (let type = 2; type <= count; type++) {
+    console.log('Cloning drive type:', type);
+    baseRows.forEach((baseRow, index) => {
+      const clone = baseRow.cloneNode(true);
+      clone.classList.add('clone');
+      
+      // Обновляем id селектов
+      const select = clone.querySelector('select');
+      if (select) {
+        select.id = `drive-${index + 1}-${type}`;
+        // Заполняем селекты данными из presets
+        const options = driveOptions[`drive-${index + 1}`];
+        if (options) {
+          select.innerHTML = '';
+          options.forEach(optText => {
+            const option = document.createElement('option');
+            option.textContent = optText;
+            select.appendChild(option);
+          });
+        }
+      }
+      
+      // Заменяем "(тип 1)" на "(тип 2)" и т.д.
+      const cells = clone.querySelectorAll('td');
+      cells.forEach(cell => {
+        cell.innerHTML = cell.innerHTML.replace(/\(тип \d+\)/g, `(тип ${type})`);
+      });
+      
+      container.appendChild(clone);
+    });
+  }
+  
+  // Обновляем drive-5 и drive-6 после клонирования
+  updateDrive5();
+  updateDrive6();
+  
+  // Разблокированные drive-6 получают первое значение
+  const drive3 = document.getElementById('drive-3');
+  const drive3Text = drive3 ? drive3.selectedOptions[0].text : '';
+  const isSataOrSas = drive3Text === 'SATA' || drive3Text === 'SAS';
+  if (isSataOrSas) {
+    const drive6Selects = document.querySelectorAll('[id^="drive-6"]');
+    drive6Selects.forEach(select => {
+      select.value = select.options[0] ? select.options[0].value : '';
+    });
+  }
+  
+  // Скрываем строки с пустыми селекторами
+  checkRows();
+}
+
+// Клонирование network-строк
+function cloneNetworks() {
+  const count = parseInt(document.getElementById('networkCount').value) || 1;
+  if (count < 1) return;
+  
+  const container = document.getElementById('network-container');
+  if (!container) return;
+  
+  // Удаляем все клонированные строки (кроме базовых)
+  const existingClones = container.querySelectorAll('tr.clone');
+  existingClones.forEach(row => row.remove());
+  
+  // Если только 1 тип, ничего не клонируем
+  if (count === 1) return;
+  
+  // Запрашиваем базовые строки ПОСЛЕ удаления клонов
+  const baseRows = container.querySelectorAll('tr');
+  console.log('network baseRows found:', baseRows.length);
+  
+  // Клонируем строки для каждого дополнительного типа
+  for (let type = 2; type <= count; type++) {
+    console.log('Cloning network type:', type);
+    baseRows.forEach((baseRow, index) => {
+      const clone = baseRow.cloneNode(true);
+      clone.classList.add('clone');
+      
+      // Обновляем id селектов
+      const select = clone.querySelector('select');
+      if (select) {
+        select.id = `network-${index + 1}-${type}`;
+        // Заполняем селекты данными из presets
+        const options = networkOptions[`network-${index + 1}`];
+        if (options) {
+          select.innerHTML = '';
+          options.forEach(optText => {
+            const option = document.createElement('option');
+            option.textContent = optText;
+            select.appendChild(option);
+          });
+        }
+      }
+      
+      // Заменяем "(тип 1)" на "(тип 2)" и т.д.
+      const cells = clone.querySelectorAll('td');
+      cells.forEach(cell => {
+        cell.innerHTML = cell.innerHTML.replace(/\(тип \d+\)/g, `(тип ${type})`);
+      });
+      
+      container.appendChild(clone);
+    });
+  }
+  
+  // Скрываем строки с пустыми селекторами
+  checkRows();
+}
+
+// Drive-3: если выбрано не SATA и не SAS, блокируем drive-6
+function updateDrive5() {
+  const drive3 = document.getElementById('drive-3');
+  if (!drive3) return;
+  const selectedText = drive3.selectedOptions[0].text;
+  const isSataOrSas = selectedText === 'SATA' || selectedText === 'SAS';
+  
+  const drive6Selects = document.querySelectorAll('[id^="drive-6"]');
+  drive6Selects.forEach(select => {
+    select.disabled = !isSataOrSas;
+    if (!isSataOrSas) {
+      select.value = '';
+    } else {
+      select.value = select.options[0] ? select.options[0].value : '';
+    }
+  });
+}
+
+// Network-2: network-6 заблокирована по умолчанию, разблокируется если network-2 ≠ Ethernet
+function updateNetwork6() {
+  const network2 = document.getElementById('network-2');
+  if (!network2) return;
+  const selectedText = network2.selectedOptions[0].text;
+  const isEthernet = selectedText === 'Ethernet';
+  
+  const network6Selects = document.querySelectorAll('[id^="network-6"]');
+  network6Selects.forEach(select => {
+    select.disabled = isEthernet;
+    if (isEthernet) {
+      select.value = '';
+    } else {
+      select.value = select.options[0] ? select.options[0].value : '';
+    }
+  });
+}
+
+// По умолчанию блокируем все network-6
+function initNetwork6() {
+  const network6Selects = document.querySelectorAll('[id^="network-6"]');
+  network6Selects.forEach(select => {
+    select.disabled = true;
+    select.value = '';
+  });
+}
+
+// Drive-5: если выбрано не HDD, блокируем drive-6
+function updateDrive6() {
+  const drive6Selects = document.querySelectorAll('[id^="drive-6"]');
+  const drive5Selects = document.querySelectorAll('[id^="drive-5"]');
+  
+  drive6Selects.forEach((drive6, index) => {
+    const drive5 = drive5Selects[index];
+    if (!drive5) return;
+    const selectedText = drive5.selectedOptions[0].text;
+    const isHdd = selectedText === 'HDD';
+    
+    drive6.disabled = !isHdd;
+    if (!isHdd) {
+      drive6.value = '';
+    } else {
+      drive6.value = drive6.options[0] ? drive6.options[0].value : '';
+    }
+  });
+}
+
+// Проверка и подсветка строк
+function checkRows() {
+  const table = document.getElementById('dataTable');
+  const rows = table.querySelectorAll('tbody tr');
+  
+  rows.forEach(row => {
+    const select = row.querySelector('select');
+    if (select) {
+      const selectedValue = select.selectedOptions[0] ? select.selectedOptions[0].text : '';
+      if (!selectedValue || selectedValue.trim() === '') {
+        row.style.display = 'none';
+        row.style.removeProperty('background-color');
+      } else if (selectedValue.includes('Удалить')) {
+        row.style.display = '';
+        row.style.backgroundColor = '#F08080';
+      } else if (select.disabled) {
+        row.style.display = '';
+        row.style.backgroundColor = '#90EE90';
+      } else {
+        row.style.display = '';
+        row.style.removeProperty('background-color');
+      }
+    }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  applyPreset(currentPreset);
+
+  document.getElementById('presetSelector').addEventListener('change', function (e) {
+    applyPreset(e.target.value);
+  });
+
+  document.getElementById('driveCount').addEventListener('input', function () {
+    cloneDrives();
+  });
+
+  document.getElementById('applyDriveBtn').addEventListener('click', function () {
+    cloneDrives();
+  });
+
+  document.getElementById('networkCount').addEventListener('input', function () {
+    cloneNetworks();
+  });
+
+  document.getElementById('applyNetworkBtn').addEventListener('click', function () {
+    cloneNetworks();
+  });
+
+  // Контроллер: если controller-1 = "Удалить", блокируем controller-2,3,4
+  document.getElementById('controller-1').addEventListener('change', function () {
+    const controllerKeys = ['controller-2', 'controller-3', 'controller-4'];
+    const shouldDisable = this.selectedOptions[0].text.includes('Удалить');
+    controllerKeys.forEach(key => {
+      const el = document.getElementById(key);
+      if (el) {
+        el.disabled = shouldDisable;
+        if (shouldDisable) {
+          el.value = '';
+        } else {
+          el.value = el.options[0] ? el.options[0].value : '';
+        }
+      }
+    });
+  });
+
+  // Контроллер-3: если "Удалить", очищаем controller-2
+  document.getElementById('controller-3').addEventListener('change', function () {
+    const shouldClear = this.selectedOptions[0].text.includes('Удалить');
+    const controller2 = document.getElementById('controller-2');
+    if (controller2) {
+      if (shouldClear) {
+        controller2.value = '';
+      } else {
+        controller2.value = controller2.options[0] ? controller2.options[0].value : '';
+      }
+    }
+  });
+
+  // GPU: если gpu-1 = "Удалить", блокируем gpu-2...gpu-8
+  document.getElementById('gpu-1').addEventListener('change', function () {
+    const gpuKeys = ['gpu-2', 'gpu-3', 'gpu-4', 'gpu-5', 'gpu-6', 'gpu-7', 'gpu-8'];
+    const shouldDisable = this.selectedOptions[0].text.includes('Удалить');
+    gpuKeys.forEach(key => {
+      const el = document.getElementById(key);
+      if (el) {
+        el.disabled = shouldDisable;
+        if (shouldDisable) {
+          el.value = '';
+        } else {
+          el.value = el.options[0] ? el.options[0].value : '';
+        }
+      }
+    });
+  });
+
+  // HBA: если hba-1 = "Удалить", блокируем hba-2, hba-3, hba-4
+  document.getElementById('hba-1').addEventListener('change', function () {
+    const hbaKeys = ['hba-2', 'hba-3', 'hba-4'];
+    const shouldDisable = this.selectedOptions[0].text.includes('Удалить');
+    hbaKeys.forEach(key => {
+      const el = document.getElementById(key);
+      if (el) {
+        el.disabled = shouldDisable;
+        if (shouldDisable) {
+          el.value = '';
+        } else {
+          el.value = el.options[0] ? el.options[0].value : '';
+        }
+      }
+    });
+  });
+
+  document.getElementById('drive-3').addEventListener('change', updateDrive5);
+  document.getElementById('drive-5').addEventListener('change', updateDrive6);
+  document.getElementById('network-2').addEventListener('change', updateNetwork6);
+
+  // Скрываем строки с пустыми селекторами при изменении любого селектора
+  const allSelects = document.querySelectorAll('#dataTable tbody select');
+  allSelects.forEach(select => {
+    select.addEventListener('change', checkRows);
+  });
+
+  document.getElementById('exportBtn').addEventListener('click', function () {
+    const table = document.getElementById('dataTable');
+    const rows = table.querySelectorAll('tbody tr');
+    const data = [];
+
+    // 1. Собираем все строки с их select id
+    const allRows = [];
+    rows.forEach(row => {
+      const select = row.querySelector('select');
+      const selectId = select ? select.id : null;
+      const fixedValue1 = row.cells[0].textContent.trim();
+      const selectedValue = select && select.selectedOptions.length > 0
+        ? select.selectedOptions[0].text
+        : '';
+      const fixedValue2 = row.cells[2].textContent.trim();
+      allRows.push({ selectId, fixedValue1, selectedValue, fixedValue2 });
+    });
+
+    // 2. Проверяем gpu-1 — если "Удалить", исключаем gpu-2...gpu-8
+    const gpu1Row = allRows.find(r => r.selectId === 'gpu-1');
+    const excludeGpu = gpu1Row && gpu1Row.selectedValue.includes('Удалить');
+    const gpuKeysToExclude = ['gpu-2', 'gpu-3', 'gpu-4', 'gpu-5', 'gpu-6', 'gpu-7', 'gpu-8'];
+
+    // 3. Проверяем controller-1 — если "Удалить", исключаем controller-2,3,4
+    const controller1Row = allRows.find(r => r.selectId === 'controller-1');
+    const excludeController = controller1Row && controller1Row.selectedValue.includes('Удалить');
+    const controllerKeysToExclude = ['controller-2', 'controller-3', 'controller-4'];
+
+    // 4. Проверяем hba-1 — если "Удалить", исключаем hba-2, hba-3, hba-4
+    const hba1Row = allRows.find(r => r.selectId === 'hba-1');
+    const excludeHba = hba1Row && hba1Row.selectedValue.includes('Удалить');
+    const hbaKeysToExclude = ['hba-2', 'hba-3', 'hba-4'];
+
+    // 5. Проверяем controller-3 — если "Удалить", исключаем controller-2
+    const controller3Row = allRows.find(r => r.selectId === 'controller-3');
+    const excludeController2 = controller3Row && controller3Row.selectedValue.includes('Удалить');
+
+      // 4. Собираем drive-данные с учётом типов
+    const driveRows = allRows.filter(r => r.selectId && r.selectId.startsWith('drive-'));
+    const driveByType = {};
+    driveRows.forEach(row => {
+      // Определяем тип по id: drive-1, drive-2, ..., drive-1-2, drive-2-2, и т.д.
+      const parts = row.selectId.split('-');
+      const baseIndex = parseInt(parts[1]);
+      const typeMatch = row.selectId.match(/-(\d+)$/);
+      const type = typeMatch ? parseInt(typeMatch[1]) : 1;
+      
+      if (!driveByType[type]) driveByType[type] = {};
+      driveByType[type][baseIndex] = row;
+    });
+
+    // 5. Проверяем drive-3: если не SATA и не SAS, исключаем все drive-5
+    const drive3Row = allRows.find(r => r.selectId === 'drive-3');
+    const drive3Selected = drive3Row ? drive3Row.selectedValue : '';
+    const isSataOrSas = drive3Selected === 'SATA' || drive3Selected === 'SAS';
+
+    // 6. Проверяем drive-5: если не HDD, исключаем все drive-6
+    const drive5Rows = allRows.filter(r => r.selectId && /^drive-5/.test(r.selectId));
+    const drive5Values = {};
+    drive5Rows.forEach(row => {
+      const parts = row.selectId.split('-');
+      const baseIndex = parseInt(parts[1]);
+      const typeMatch = row.selectId.match(/-(\d+)$/);
+      const type = typeMatch ? parseInt(typeMatch[1]) : 1;
+      if (!drive5Values[type]) drive5Values[type] = {};
+      drive5Values[type][baseIndex] = row.selectedValue;
+    });
+
+    // 7. Проверяем network-2: network-6 по умолчанию заблокирована и исключена из выгрузки
+    //    Разблокируется и включается в выгрузку только если network-2 ≠ Ethernet
+    const network6Selects = document.querySelectorAll('[id^="network-6"]');
+    const network6Disabled = Array.from(network6Selects).every(select => select.disabled);
+
+    // 5. Собираем данные с учётом исключений
+    allRows.forEach(item => {
+      // Пропускаем строки, если выбрано "Удалить"
+      if (item.selectedValue.includes('Удалить')) return;
+
+      // Пропускаем gpu-строки, если gpu-1 = "Удалить"
+      if (excludeGpu && gpuKeysToExclude.includes(item.selectId)) return;
+
+      // Пропускаем controller-строки, если controller-1 = "Удалить"
+      if (excludeController && controllerKeysToExclude.includes(item.selectId)) return;
+
+      // Пропускаем controller-2, если controller-3 = "Удалить"
+      if (excludeController2 && item.selectId === 'controller-2') return;
+
+      // Пропускаем hba-строки, если hba-1 = "Удалить"
+      if (excludeHba && hbaKeysToExclude.includes(item.selectId)) return;
+
+      // Пропускаем drive-5, если drive-3 не SATA и не SAS
+      if (!isSataOrSas && item.selectId && /^drive-5/.test(item.selectId)) return;
+
+      // Пропускаем drive-6, если drive-3 не SATA/SAS ИЛИ drive-5 не HDD
+      if (item.selectId && /^drive-6/.test(item.selectId)) {
+        if (!isSataOrSas) return;
+        const parts = item.selectId.split('-');
+        const baseIndex = parseInt(parts[1]);
+        const typeMatch = item.selectId.match(/-(\d+)$/);
+        const type = typeMatch ? parseInt(typeMatch[1]) : 1;
+        const drive5Value = drive5Values[type] ? drive5Values[type][baseIndex] : '';
+        if (drive5Value !== 'HDD') return;
+      }
+
+      // Пропускаем network-6, если заблокирована (по умолчанию)
+      if (network6Disabled && item.selectId && /^network-6/.test(item.selectId)) return;
+
+      data.push([item.fixedValue1, item.selectedValue, item.fixedValue2]);
+    });
+
+    // Создаём workbook
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Таблица');
+
+    // Заголовки
+    worksheet.columns = [
+      { header: 'Наименование характеристики', key: 'name', width: 50 },
+      { header: 'Значение характеристики', key: 'value', width: 30 },
+      { header: 'Единица измерения характеристики', key: 'unit', width: 30 }
+    ];
+
+    // Данные
+    data.forEach(row => {
+      worksheet.addRow({ name: row[0], value: row[1], unit: row[2] });
+    });
+
+    // Применяем стили
+    const borderStyle = {
+      style: 'thin',
+      color: { rgb: '000000' }
+    };
+
+    worksheet.eachRow((row, rowNumber) => {
+      row.eachCell((cell, colNumber) => {
+        // Чёрная рамка со всех сторон
+        cell.border = {
+          top: { style: borderStyle },
+          left: { style: borderStyle },
+          bottom: { style: borderStyle },
+          right: { style: borderStyle }
+        };
+
+        if (rowNumber === 1) {
+          // Заголовок: жирный, по центру, фон
+          cell.font = { bold: true };
+          cell.alignment = { horizontal: 'center', vertical: 'center' };
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'D9E1F2' }
+          };
+        } else if (colNumber === 1) {
+          // Первая колонка: перенос текста, по левому краю
+          cell.alignment = { horizontal: 'left', vertical: 'center', wrapText: true };
+        } else {
+          // Остальные колонки: по центру
+          cell.alignment = { horizontal: 'center', vertical: 'center' };
+        }
+      });
+    });
+
+    // Скачиваем файл
+    workbook.xlsx.writeBuffer().then(buffer => {
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = 'export.xlsx';
+      anchor.click();
+      window.URL.revokeObjectURL(url);
+    });
+  });
+});
+
+function applyPreset(presetName) {
+  localStorage.removeItem('currentPreset');
+  console.log('=== applyPreset вызван с presetName:', presetName);
+  
+  const commonPromises = COMMON_FILES.map(file =>
+    fetch(PRESETS_PATH + file)
+      .then(res => {
+        console.log('Загружен:', PRESETS_PATH + file, 'статус:', res.status);
+        if (!res.ok) throw new Error(`Ошибка загрузки ${file}`);
+        return res.json();
+      })
+  );
+
+  Promise.all(commonPromises)
+    .then(commonResults => {
+      const commonOptions = Object.assign({}, ...commonResults);
+      console.log('Общие файлы загружены, ключи:', Object.keys(commonOptions));
+
+      const presetFile = PRESET_FILES[presetName];
+      console.log('Загрузка пресета:', PRESETS_PATH + presetFile);
+      
+      fetch(PRESETS_PATH + presetFile)
+        .then(res => {
+          console.log('Пресет загружен, статус:', res.status);
+          if (!res.ok) throw new Error(`Ошибка загрузки ${presetFile}`);
+          return res.json();
+        })
+        .then(presetOptions => {
+          console.log('Пресет данные:', presetOptions);
+          const allOptions = { ...commonOptions, ...presetOptions };
+          updateSelects(allOptions);
+          
+          // Сохраняем drive-опции и применяем ко всем drive-селектам
+          driveOptions = commonOptions;
+          console.log('driveOptions keys:', Object.keys(driveOptions).filter(k => k.startsWith('drive')));
+          
+          const driveSelects = document.querySelectorAll('[id^="drive-"]');
+          driveSelects.forEach(select => {
+            const parts = select.id.split('-');
+            const driveIndex = parseInt(parts[1]);
+            const options = driveOptions[`drive-${driveIndex}`];
+            if (options) {
+              select.innerHTML = '';
+              options.forEach(optText => {
+                const option = document.createElement('option');
+                option.textContent = optText;
+                select.appendChild(option);
+              });
+            }
+          });
+          
+          // Если driveCount > 1, клонируем строки
+          const driveCount = parseInt(document.getElementById('driveCount').value) || 1;
+          if (driveCount > 1) {
+            cloneDrives();
+          } else {
+            updateDrive5();
+            updateDrive6();
+            // Разблокированные drive-6 получают первое значение
+            const drive6Selects = document.querySelectorAll('[id^="drive-6"]');
+            const drive3 = document.getElementById('drive-3');
+            const drive3Text = drive3 ? drive3.selectedOptions[0].text : '';
+            const isSataOrSas = drive3Text === 'SATA' || drive3Text === 'SAS';
+            if (isSataOrSas) {
+              drive6Selects.forEach(select => {
+                select.value = select.options[0] ? select.options[0].value : '';
+              });
+            }
+          }
+          
+          // Загружаем network-опции
+          networkOptions = commonOptions;
+          console.log('networkOptions keys:', Object.keys(networkOptions).filter(k => k.startsWith('network')));
+          
+          const networkSelects = document.querySelectorAll('[id^="network-"]');
+          networkSelects.forEach(select => {
+            const parts = select.id.split('-');
+            const networkIndex = parseInt(parts[1]);
+            const options = networkOptions[`network-${networkIndex}`];
+            if (options) {
+              select.innerHTML = '';
+              options.forEach(optText => {
+                const option = document.createElement('option');
+                option.textContent = optText;
+                select.appendChild(option);
+              });
+            }
+          });
+          
+          // Если networkCount > 1, клонируем строки
+          const networkCount = parseInt(document.getElementById('networkCount').value) || 1;
+          if (networkCount > 1) {
+            cloneNetworks();
+          }
+          
+          // В конце — блокируем network-6 по умолчанию и проверяем network-2
+          initNetwork6();
+          updateNetwork6();
+          
+          // Проверка и подсветка строк
+          checkRows();
+          
+          // Инициализируем GPU: если gpu-1 = "Удалить", блокируем gpu-2...gpu-8
+          const gpu1Init = document.getElementById('gpu-1');
+          if (gpu1Init) {
+            gpu1Init.dispatchEvent(new Event('change'));
+          }
+          
+          // Инициализируем controller-1: если "Удалить", блокируем controller-2,3,4
+          const controller1Init = document.getElementById('controller-1');
+          if (controller1Init) {
+            controller1Init.dispatchEvent(new Event('change'));
+          }
+          
+          // Инициализируем hba-1: если "Удалить", блокируем hba-2,3,4
+          const hba1Init = document.getElementById('hba-1');
+          if (hba1Init) {
+            hba1Init.dispatchEvent(new Event('change'));
+          }
+          
+          // Инициализируем controller-3: если "Удалить", очищаем controller-2
+          const controller3Init = document.getElementById('controller-3');
+          if (controller3Init) {
+            controller3Init.dispatchEvent(new Event('change'));
+          }
+          
+          currentPreset = presetName;
+          localStorage.setItem('currentPreset', presetName);
+        })
+        .catch(err => {
+          console.error('Ошибка загрузки специфичного файла:', err);
+        });
+    })
+    .catch(err => {
+      console.error('Ошибка загрузки общих файлов:', err);
+    });
+}
+
+function updateSelects(options) {
+  for (const selectId in options) {
+    const select = document.getElementById(selectId);
+    if (select) {
+      select.innerHTML = '';
+      options[selectId].forEach(optText => {
+        const option = document.createElement('option');
+        option.textContent = optText;
+        select.appendChild(option);
+      });
+
+      // Если доступно только одно значение — делаем поле неактивным
+      if (options[selectId].length <= 1) {
+        select.disabled = true;
+      } else {
+        select.disabled = false;
+      }
+    }
+  }
+}
