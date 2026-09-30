@@ -73,22 +73,65 @@ function cloneDrives() {
   }
   
   // Обновляем drive-5 и drive-6 после клонирования
-  updateDrive5();
-  updateDrive6();
-  
-  // Разблокированные drive-6 получают первое значение
-  const drive3 = document.getElementById('drive-3');
-  const drive3Text = drive3 ? drive3.selectedOptions[0].text : '';
-  const isSataOrSas = drive3Text === 'SATA' || drive3Text === 'SAS';
-  if (isSataOrSas) {
-    const drive6Selects = document.querySelectorAll('[id^="drive-6"]');
-    drive6Selects.forEach(select => {
-      select.value = select.options[0] ? select.options[0].value : '';
-    });
-  }
+  updateDrive5AfterClone(count);
+  updateDrive6AfterClone(count);
   
   // Скрываем строки с пустыми селекторами
   checkRows();
+}
+
+// По умолчанию блокируем все network-6
+function initNetwork6() {
+  const network6 = document.getElementById('network-6');
+  if (network6) {
+    network6.disabled = true;
+    network6.value = '';
+  }
+}
+
+// Обновление drive-5-N после клонирования
+function updateDrive5AfterClone(count) {
+  for (let type = 2; type <= count; type++) {
+    const drive3Clone = document.getElementById(`drive-3-${type}`);
+    const drive5Clone = document.getElementById(`drive-5-${type}`);
+    const drive6Clone = document.getElementById(`drive-6-${type}`);
+    
+    // Если drive-3-N не SATA/SAS, drive-5-N = SSD
+    if (drive3Clone && drive5Clone) {
+      const isSataOrSas = drive3Clone.selectedOptions[0].text === 'SATA' || drive3Clone.selectedOptions[0].text === 'SAS';
+      if (!isSataOrSas) {
+        drive5Clone.value = drive5Clone.options[0] ? drive5Clone.options[0].value : '';
+      }
+    }
+    
+    // Если drive-3-N не SATA/SAS, скрываем drive-6-N
+    if (drive3Clone && drive6Clone) {
+      const isSataOrSas = drive3Clone.selectedOptions[0].text === 'SATA' || drive3Clone.selectedOptions[0].text === 'SAS';
+      drive6Clone.disabled = !isSataOrSas;
+      if (!isSataOrSas) {
+        drive6Clone.value = '';
+      } else {
+        drive6Clone.value = drive6Clone.options[0] ? drive6Clone.options[0].value : '';
+      }
+    }
+  }
+}
+
+// Обновление drive-6-N после клонирования
+function updateDrive6AfterClone(count) {
+  for (let type = 2; type <= count; type++) {
+    const drive5Clone = document.getElementById(`drive-5-${type}`);
+    const drive6Clone = document.getElementById(`drive-6-${type}`);
+    if (drive5Clone && drive6Clone) {
+      const isHdd = drive5Clone.selectedOptions[0].text === 'HDD';
+      drive6Clone.disabled = !isHdd;
+      if (!isHdd) {
+        drive6Clone.value = '';
+      } else {
+        drive6Clone.value = drive6Clone.options[0] ? drive6Clone.options[0].value : '';
+      }
+    }
+  }
 }
 
 // Клонирование network-строк
@@ -147,6 +190,27 @@ function cloneNetworks() {
   updateNetwork6AfterClone(count);
 }
 
+// Network-2: network-6 заблокирована по умолчанию, разблокируется если network-2 ≠ Ethernet
+function updateNetwork6() {
+  const network2 = document.getElementById('network-2');
+  if (!network2) return;
+  const selectedText = network2.selectedOptions[0].text;
+  const isEthernet = selectedText === 'Ethernet';
+  
+  // Обновляем ТОЛЬКО базовый network-6
+  const network6 = document.getElementById('network-6');
+  if (!network6) return;
+  
+  network6.disabled = isEthernet;
+  if (isEthernet) {
+    network6.value = '';
+  } else {
+    network6.value = network6.options[0] ? network6.options[0].value : '';
+  }
+  
+  checkRows();
+}
+
 // Обновление network-6 для каждого типа
 function updateNetwork6AfterClone(count) {
   // Базовый network-6 проверяет network-2
@@ -180,72 +244,52 @@ function updateNetwork6AfterClone(count) {
   checkRows();
 }
 
-// Drive-3: если выбрано не SATA и не SAS, блокируем drive-6
+// Drive-3: если выбрано не SATA и не SAS, скрываем drive-6
 function updateDrive5() {
   const drive3 = document.getElementById('drive-3');
   if (!drive3) return;
   const selectedText = drive3.selectedOptions[0].text;
   const isSataOrSas = selectedText === 'SATA' || selectedText === 'SAS';
   
-  const drive6Selects = document.querySelectorAll('[id^="drive-6"]');
-  drive6Selects.forEach(select => {
-    select.disabled = !isSataOrSas;
+  // Если drive-3 не SATA/SAS, drive-5 = SSD
+  const drive5 = document.getElementById('drive-5');
+  if (drive5 && !isSataOrSas) {
+    drive5.value = drive5.options.length > 0 ? drive5.options[0].value : '';
+  }
+  
+  // Если drive-3 не SATA/SAS, скрываем drive-6
+  const drive6 = document.getElementById('drive-6');
+  if (drive6) {
+    drive6.disabled = !isSataOrSas;
     if (!isSataOrSas) {
-      select.value = '';
+      drive6.value = '';
     } else {
-      select.value = select.options[0] ? select.options[0].value : '';
+      drive6.value = drive6.options[0] ? drive6.options[0].value : '';
     }
-  });
-}
-
-// Network-2: network-6 заблокирована по умолчанию, разблокируется если network-2 ≠ Ethernet
-function updateNetwork6() {
-  const network2 = document.getElementById('network-2');
-  if (!network2) return;
-  const selectedText = network2.selectedOptions[0].text;
-  const isEthernet = selectedText === 'Ethernet';
-  
-  // Обновляем ТОЛЬКО базовый network-6
-  const network6 = document.getElementById('network-6');
-  if (!network6) return;
-  
-  network6.disabled = isEthernet;
-  if (isEthernet) {
-    network6.value = '';
-  } else {
-    network6.value = network6.options[0] ? network6.options[0].value : '';
   }
   
   checkRows();
 }
 
-// По умолчанию блокируем все network-6
-function initNetwork6() {
-  const network6Selects = document.querySelectorAll('[id^="network-6"]');
-  network6Selects.forEach(select => {
-    select.disabled = true;
-    select.value = '';
-  });
-}
-
 // Drive-5: если выбрано не HDD, блокируем drive-6
 function updateDrive6() {
-  const drive6Selects = document.querySelectorAll('[id^="drive-6"]');
-  const drive5Selects = document.querySelectorAll('[id^="drive-5"]');
+  const drive5 = document.getElementById('drive-5');
+  if (!drive5) return;
+  const selectedText = drive5.selectedOptions[0].text;
+  const isHdd = selectedText === 'HDD';
   
-  drive6Selects.forEach((drive6, index) => {
-    const drive5 = drive5Selects[index];
-    if (!drive5) return;
-    const selectedText = drive5.selectedOptions[0].text;
-    const isHdd = selectedText === 'HDD';
-    
-    drive6.disabled = !isHdd;
-    if (!isHdd) {
-      drive6.value = '';
-    } else {
-      drive6.value = drive6.options[0] ? drive6.options[0].value : '';
-    }
-  });
+  // Обновляем ТОЛЬКО базовый drive-6
+  const drive6 = document.getElementById('drive-6');
+  if (!drive6) return;
+  
+  drive6.disabled = !isHdd;
+  if (!isHdd) {
+    drive6.value = '';
+  } else {
+    drive6.value = drive6.options[0] ? drive6.options[0].value : '';
+  }
+  
+  checkRows();
 }
 
 // Проверка и подсветка строк
@@ -264,8 +308,29 @@ function checkRows() {
   rows.forEach(row => {
     const select = row.querySelector('select');
     if (select) {
-      // Пропускаем drive-строки — они управляются через drive-container
-      if (select.id && select.id.startsWith('drive-')) return;
+      // Скрываем drive-6-N при drive-3-N не SATA/SAS
+      if (select.id && /^drive-6/.test(select.id)) {
+        const parts = select.id.split('-');
+        const baseIndex = parseInt(parts[1]);
+        const typeMatch = select.id.match(/-(\d+)$/);
+        const type = typeMatch ? parseInt(typeMatch[1]) : 1;
+        
+        // Для базового drive-6 (type=1) проверяем drive-3, для клонов — drive-3-N
+        const drive3Id = type === 1 ? 'drive-3' : `drive-3-${type}`;
+        const drive3Clone = document.getElementById(drive3Id);
+        console.log(`checkRows: drive-6-${type}, checking drive-3-${type}, found:`, !!drive3Clone);
+        if (drive3Clone) {
+          const drive3Text = drive3Clone.selectedOptions[0].text;
+          console.log(`checkRows: drive-3-${type} text = "${drive3Text}"`);
+          const isSataOrSas = drive3Text === 'SATA' || drive3Text === 'SAS';
+          console.log(`checkRows: isSataOrSas = ${isSataOrSas}`);
+          if (!isSataOrSas) {
+            row.style.display = 'none';
+            row.style.removeProperty('background-color');
+            return;
+          }
+        }
+      }
       
       // Скрываем network-6-N при блокировке (Ethernet)
       if (select.id && /^network-6/.test(select.id) && select.disabled) {
@@ -385,6 +450,57 @@ document.addEventListener('DOMContentLoaded', function () {
   document.getElementById('drive-5').addEventListener('change', updateDrive6);
   document.getElementById('network-2').addEventListener('change', updateNetwork6);
 
+  // Делегирование событий для клонированных drive-N-TYPE
+  const driveContainer = document.getElementById('drive-container');
+  if (driveContainer) {
+    driveContainer.addEventListener('change', function (e) {
+      const select = e.target;
+      const match = select.id.match(/^drive-(\d+)-(\d+)$/);
+      if (match) {
+        const index = parseInt(match[1]);
+        const type = parseInt(match[2]);
+        
+        // drive-3-N → drive-5-N и drive-6-N
+        if (index === 3) {
+          const drive5Clone = document.getElementById(`drive-5-${type}`);
+          const drive6Clone = document.getElementById(`drive-6-${type}`);
+          const isSataOrSas = select.selectedOptions[0].text === 'SATA' || select.selectedOptions[0].text === 'SAS';
+          
+          // Если drive-3-N не SATA/SAS, drive-5-N = SSD
+          if (drive5Clone && !isSataOrSas) {
+            drive5Clone.value = drive5Clone.options[0] ? drive5Clone.options[0].value : '';
+          }
+          
+          // Если drive-3-N не SATA/SAS, скрываем drive-6-N
+          if (drive6Clone) {
+            drive6Clone.disabled = !isSataOrSas;
+            if (!isSataOrSas) {
+              drive6Clone.value = '';
+            } else {
+              drive6Clone.value = drive6Clone.options[0] ? drive6Clone.options[0].value : '';
+            }
+          }
+          checkRows();
+        }
+        
+        // drive-5-N → drive-6-N
+        if (index === 5) {
+          const drive6Clone = document.getElementById(`drive-6-${type}`);
+          if (drive6Clone) {
+            const isHdd = select.selectedOptions[0].text === 'HDD';
+            drive6Clone.disabled = !isHdd;
+            if (!isHdd) {
+              drive6Clone.value = '';
+            } else {
+              drive6Clone.value = drive6Clone.options[0] ? drive6Clone.options[0].value : '';
+            }
+            checkRows();
+          }
+        }
+      }
+    });
+  }
+
   // Делегирование событий для клонированных network-2-N
   const networkContainer = document.getElementById('network-container');
   if (networkContainer) {
@@ -473,12 +589,19 @@ document.addEventListener('DOMContentLoaded', function () {
       driveByType[type][baseIndex] = row;
     });
 
-    // 5. Проверяем drive-3: если не SATA и не SAS, исключаем все drive-5
-    const drive3Row = allRows.find(r => r.selectId === 'drive-3');
-    const drive3Selected = drive3Row ? drive3Row.selectedValue : '';
-    const isSataOrSas = drive3Selected === 'SATA' || drive3Selected === 'SAS';
+    // 5. Проверяем drive-3-N: если не SATA и не SAS, исключаем drive-5-N
+    const drive3Rows = allRows.filter(r => r.selectId && /^drive-3/.test(r.selectId));
+    const drive3Values = {};
+    drive3Rows.forEach(row => {
+      const parts = row.selectId.split('-');
+      const baseIndex = parseInt(parts[1]);
+      const typeMatch = row.selectId.match(/-(\d+)$/);
+      const type = typeMatch ? parseInt(typeMatch[1]) : 1;
+      if (!drive3Values[type]) drive3Values[type] = {};
+      drive3Values[type][baseIndex] = row.selectedValue;
+    });
 
-    // 6. Проверяем drive-5: если не HDD, исключаем все drive-6
+    // 6. Проверяем drive-5-N: если не HDD, исключаем drive-6-N
     const drive5Rows = allRows.filter(r => r.selectId && /^drive-5/.test(r.selectId));
     const drive5Values = {};
     drive5Rows.forEach(row => {
@@ -521,16 +644,26 @@ document.addEventListener('DOMContentLoaded', function () {
       // Пропускаем hba-строки, если hba-1 = "Удалить"
       if (excludeHba && hbaKeysToExclude.includes(item.selectId)) return;
 
-      // Пропускаем drive-5, если drive-3 не SATA и не SAS
-      if (!isSataOrSas && item.selectId && /^drive-5/.test(item.selectId)) return;
-
-      // Пропускаем drive-6, если drive-3 не SATA/SAS ИЛИ drive-5 не HDD
-      if (item.selectId && /^drive-6/.test(item.selectId)) {
-        if (!isSataOrSas) return;
+      // Пропускаем drive-5-N, если drive-3-N не SATA и не SAS
+      if (item.selectId && /^drive-5/.test(item.selectId)) {
         const parts = item.selectId.split('-');
         const baseIndex = parseInt(parts[1]);
         const typeMatch = item.selectId.match(/-(\d+)$/);
         const type = typeMatch ? parseInt(typeMatch[1]) : 1;
+        const drive3Value = drive3Values[type] ? drive3Values[type][baseIndex] : '';
+        const isSataOrSas = drive3Value === 'SATA' || drive3Value === 'SAS';
+        if (!isSataOrSas) return;
+      }
+
+      // Пропускаем drive-6-N, если drive-3-N не SATA/SAS ИЛИ drive-5-N не HDD
+      if (item.selectId && /^drive-6/.test(item.selectId)) {
+        const parts = item.selectId.split('-');
+        const baseIndex = parseInt(parts[1]);
+        const typeMatch = item.selectId.match(/-(\d+)$/);
+        const type = typeMatch ? parseInt(typeMatch[1]) : 1;
+        const drive3Value = drive3Values[type] ? drive3Values[type][baseIndex] : '';
+        const isSataOrSas = drive3Value === 'SATA' || drive3Value === 'SAS';
+        if (!isSataOrSas) return;
         const drive5Value = drive5Values[type] ? drive5Values[type][baseIndex] : '';
         if (drive5Value !== 'HDD') return;
       }
@@ -667,8 +800,8 @@ function applyPreset(presetName) {
           if (driveCount > 1) {
             cloneDrives();
           } else {
-            updateDrive5();
-            updateDrive6();
+            updateDrive5AfterClone(1);
+            updateDrive6AfterClone(1);
             // Разблокированные drive-6 получают первое значение
             const drive6Selects = document.querySelectorAll('[id^="drive-6"]');
             const drive3 = document.getElementById('drive-3');
@@ -706,8 +839,7 @@ function applyPreset(presetName) {
             cloneNetworks();
           } else {
             // Если нет клонирования, блокируем network-6 по умолчанию
-            initNetwork6();
-            updateNetwork6();
+            updateNetwork6AfterClone(1);
           }
           
           // Проверка и подсветка строк
