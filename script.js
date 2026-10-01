@@ -84,30 +84,19 @@ function updateDriveAfterClone(count) {
     const drive5Clone = document.getElementById(`drive-5-${type}`);
     const drive6Clone = document.getElementById(`drive-6-${type}`);
     
-    // Если drive-3-N не SATA/SAS, drive-5-N = SSD
-    if (drive3Clone && drive5Clone) {
-      const isSataOrSas = drive3Clone.selectedOptions[0].text === 'SATA' || drive3Clone.selectedOptions[0].text === 'SAS';
+    // drive-6-N блокируется, если drive-3-N не SATA/SAS ИЛИ drive-5-N не HDD
+    if (drive3Clone && drive5Clone && drive6Clone) {
+      const drive3Text = drive3Clone.selectedOptions[0].text;
+      const drive5Text = drive5Clone.selectedOptions[0].text;
+      const isSataOrSas = drive3Text === 'SATA' || drive3Text === 'SAS';
+      const isHdd = drive5Text === 'HDD';
+      const shouldDisable = !isSataOrSas || !isHdd;
+      
+      drive6Clone.disabled = shouldDisable;
       if (!isSataOrSas) {
         drive5Clone.value = drive5Clone.options[0] ? drive5Clone.options[0].value : '';
       }
-    }
-    
-    // Если drive-3-N не SATA/SAS, скрываем drive-6-N
-    if (drive3Clone && drive6Clone) {
-      const isSataOrSas = drive3Clone.selectedOptions[0].text === 'SATA' || drive3Clone.selectedOptions[0].text === 'SAS';
-      drive6Clone.disabled = !isSataOrSas;
-      if (!isSataOrSas) {
-        drive6Clone.value = '';
-      } else {
-        drive6Clone.value = drive6Clone.options[0] ? drive6Clone.options[0].value : '';
-      }
-    }
-    
-    // Если drive-5-N не HDD, скрываем drive-6-N
-    if (drive5Clone && drive6Clone) {
-      const isHdd = drive5Clone.selectedOptions[0].text === 'HDD';
-      drive6Clone.disabled = !isHdd;
-      if (!isHdd) {
+      if (shouldDisable) {
         drive6Clone.value = '';
       } else {
         drive6Clone.value = drive6Clone.options[0] ? drive6Clone.options[0].value : '';
@@ -237,11 +226,14 @@ function updateDrive5() {
     drive5.value = drive5.options.length > 0 ? drive5.options[0].value : '';
   }
   
-  // Если drive-3 не SATA/SAS, скрываем drive-6
+  // drive-6 блокируется, если drive-3 не SATA/SAS ИЛИ drive-5 не HDD
   const drive6 = document.getElementById('drive-6');
-  if (drive6) {
-    drive6.disabled = !isSataOrSas;
-    if (!isSataOrSas) {
+  if (drive6 && drive5) {
+    const drive5Text = drive5.selectedOptions[0].text;
+    const isHdd = drive5Text === 'HDD';
+    const shouldDisable = !isSataOrSas || !isHdd;
+    drive6.disabled = shouldDisable;
+    if (shouldDisable) {
       drive6.value = '';
     } else {
       drive6.value = drive6.options[0] ? drive6.options[0].value : '';
@@ -258,15 +250,19 @@ function updateDrive6() {
   const selectedText = drive5.selectedOptions[0].text;
   const isHdd = selectedText === 'HDD';
   
-  // Обновляем ТОЛЬКО базовый drive-6
+  // drive-6 блокируется, если drive-3 не SATA/SAS ИЛИ drive-5 не HDD
+  const drive3 = document.getElementById('drive-3');
   const drive6 = document.getElementById('drive-6');
-  if (!drive6) return;
-  
-  drive6.disabled = !isHdd;
-  if (!isHdd) {
-    drive6.value = '';
-  } else {
-    drive6.value = drive6.options[0] ? drive6.options[0].value : '';
+  if (drive6 && drive3) {
+    const drive3Text = drive3.selectedOptions[0].text;
+    const isSataOrSas = drive3Text === 'SATA' || drive3Text === 'SAS';
+    const shouldDisable = !isSataOrSas || !isHdd;
+    drive6.disabled = shouldDisable;
+    if (shouldDisable) {
+      drive6.value = '';
+    } else {
+      drive6.value = drive6.options[0] ? drive6.options[0].value : '';
+    }
   }
   
   checkRows();
@@ -288,7 +284,7 @@ function checkRows() {
   rows.forEach(row => {
     const select = row.querySelector('select');
     if (select) {
-      // Скрываем drive-6-N при drive-3-N не SATA/SAS
+      // Скрываем drive-6-N при drive-3-N не SATA/SAS ИЛИ drive-5-N не HDD
       if (select.id && /^drive-6/.test(select.id)) {
         const parts = select.id.split('-');
         const baseIndex = parseInt(parts[1]);
@@ -297,11 +293,16 @@ function checkRows() {
         
         // Для базового drive-6 (type=1) проверяем drive-3, для клонов — drive-3-N
         const drive3Id = type === 1 ? 'drive-3' : `drive-3-${type}`;
+        const drive5Id = type === 1 ? 'drive-5' : `drive-5-${type}`;
         const drive3Clone = document.getElementById(drive3Id);
-        if (drive3Clone) {
+        const drive5Clone = document.getElementById(drive5Id);
+        
+        if (drive3Clone && drive5Clone) {
           const drive3Text = drive3Clone.selectedOptions[0].text;
+          const drive5Text = drive5Clone.selectedOptions[0].text;
           const isSataOrSas = drive3Text === 'SATA' || drive3Text === 'SAS';
-          if (!isSataOrSas) {
+          const isHdd = drive5Text === 'HDD';
+          if (!isSataOrSas || !isHdd) {
             row.style.display = 'none';
             row.style.removeProperty('background-color');
             return;
@@ -448,10 +449,13 @@ document.addEventListener('DOMContentLoaded', function () {
             drive5Clone.value = drive5Clone.options[0] ? drive5Clone.options[0].value : '';
           }
           
-          // Если drive-3-N не SATA/SAS, скрываем drive-6-N
-          if (drive6Clone) {
-            drive6Clone.disabled = !isSataOrSas;
-            if (!isSataOrSas) {
+          // drive-6-N блокируется, если drive-3-N не SATA/SAS ИЛИ drive-5-N не HDD
+          if (drive6Clone && drive5Clone) {
+            const drive5Text = drive5Clone.selectedOptions[0].text;
+            const isHdd = drive5Text === 'HDD';
+            const shouldDisable = !isSataOrSas || !isHdd;
+            drive6Clone.disabled = shouldDisable;
+            if (shouldDisable) {
               drive6Clone.value = '';
             } else {
               drive6Clone.value = drive6Clone.options[0] ? drive6Clone.options[0].value : '';
@@ -463,10 +467,14 @@ document.addEventListener('DOMContentLoaded', function () {
         // drive-5-N → drive-6-N
         if (index === 5) {
           const drive6Clone = document.getElementById(`drive-6-${type}`);
-          if (drive6Clone) {
+          const drive3Clone = document.getElementById(`drive-3-${type}`);
+          if (drive6Clone && drive3Clone) {
             const isHdd = select.selectedOptions[0].text === 'HDD';
-            drive6Clone.disabled = !isHdd;
-            if (!isHdd) {
+            const drive3Text = drive3Clone.selectedOptions[0].text;
+            const isSataOrSas = drive3Text === 'SATA' || drive3Text === 'SAS';
+            const shouldDisable = !isSataOrSas || !isHdd;
+            drive6Clone.disabled = shouldDisable;
+            if (shouldDisable) {
               drive6Clone.value = '';
             } else {
               drive6Clone.value = drive6Clone.options[0] ? drive6Clone.options[0].value : '';
