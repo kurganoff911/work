@@ -17,7 +17,7 @@
           <option value="standart" selected>R220 Gen3</option>
           <option value="urgent">Срочный</option>
           <option value="custom">Пользовательский</option>
-    </select>
+        </select>
       </nav>
     </header>
     <main>
@@ -26,18 +26,18 @@
       <br><br>
       <h2>Таблица с данными</h2>
       <label for="driveCount">Количество типов накопителей:</label>
-        <input type="number" id="driveCount" value="1" min="1" max="10" style="width: 60px; padding: 4px;">
-        <button id="applyDriveBtn" class="applyDriveBtn btn">Ввести</button>
+        <input type="number" id="driveCount" value="1" min="1" max="10">
+        <button id="applyDriveBtn" class="btn">Ввести</button>
     <br><br>
       <label for="networkCount">Количество сетевых адаптеров:</label>
-        <input type="number" id="networkCount" value="1" min="1" max="10" style="width: 60px; padding: 4px;">
-        <button id="applyNetworkBtn" class="applyNetworkBtn btn">Ввести</button>
+        <input type="number" id="networkCount" value="1" min="1" max="10">
+        <button id="applyNetworkBtn" class="btn">Ввести</button>
     </section>
 
     <br><br>
 
     <section  class="container main_table">
-      <table id="dataTable" border="1">
+      <table id="dataTable">
         <thead>
             <tr>
               <th>Наименование характеристики</th>
@@ -590,9 +590,6 @@
 
       </main> 
 
-      <footer>
-
-      </footer>
       <script src="./script.js"></script>    
     </body>
   </html>

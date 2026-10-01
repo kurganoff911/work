@@ -90,12 +90,13 @@ p {
   white-space: normal;
 }
 
-.applyNetworkBtn {
-  margin-left: 10px; 
-  padding: 4px 16px;
+#driveCount,
+#networkCount {
+  width: 60px;
+  padding: 4px;
 }
 
-.applyDriveBtn {
-  margin-left: 10px;
-  padding: 4px 16px;
+#drive-container,
+#network-container {
+  display: table-row-group;
 }

@@ -36,11 +36,9 @@ function cloneDrives() {
   
   // Запрашиваем базовые строки ПОСЛЕ удаления клонов
   const baseRows = container.querySelectorAll('tr');
-  console.log('baseRows found:', baseRows.length);
   
   // Клонируем строки для каждого дополнительного типа
   for (let type = 2; type <= count; type++) {
-    console.log('Cloning drive type:', type);
     baseRows.forEach((baseRow, index) => {
       const clone = baseRow.cloneNode(true);
       clone.classList.add('clone');
@@ -73,24 +71,14 @@ function cloneDrives() {
   }
   
   // Обновляем drive-5 и drive-6 после клонирования
-  updateDrive5AfterClone(count);
-  updateDrive6AfterClone(count);
+  updateDriveAfterClone(count);
   
   // Скрываем строки с пустыми селекторами
   checkRows();
 }
 
-// По умолчанию блокируем все network-6
-function initNetwork6() {
-  const network6 = document.getElementById('network-6');
-  if (network6) {
-    network6.disabled = true;
-    network6.value = '';
-  }
-}
-
-// Обновление drive-5-N после клонирования
-function updateDrive5AfterClone(count) {
+// Обновление drive-5-N и drive-6-N после клонирования
+function updateDriveAfterClone(count) {
   for (let type = 2; type <= count; type++) {
     const drive3Clone = document.getElementById(`drive-3-${type}`);
     const drive5Clone = document.getElementById(`drive-5-${type}`);
@@ -114,14 +102,8 @@ function updateDrive5AfterClone(count) {
         drive6Clone.value = drive6Clone.options[0] ? drive6Clone.options[0].value : '';
       }
     }
-  }
-}
-
-// Обновление drive-6-N после клонирования
-function updateDrive6AfterClone(count) {
-  for (let type = 2; type <= count; type++) {
-    const drive5Clone = document.getElementById(`drive-5-${type}`);
-    const drive6Clone = document.getElementById(`drive-6-${type}`);
+    
+    // Если drive-5-N не HDD, скрываем drive-6-N
     if (drive5Clone && drive6Clone) {
       const isHdd = drive5Clone.selectedOptions[0].text === 'HDD';
       drive6Clone.disabled = !isHdd;
@@ -151,11 +133,9 @@ function cloneNetworks() {
   
   // Запрашиваем базовые строки ПОСЛЕ удаления клонов
   const baseRows = container.querySelectorAll('tr');
-  console.log('network baseRows found:', baseRows.length);
   
   // Клонируем строки для каждого дополнительного типа
   for (let type = 2; type <= count; type++) {
-    console.log('Cloning network type:', type);
     baseRows.forEach((baseRow, index) => {
       const clone = baseRow.cloneNode(true);
       clone.classList.add('clone');
@@ -318,12 +298,9 @@ function checkRows() {
         // Для базового drive-6 (type=1) проверяем drive-3, для клонов — drive-3-N
         const drive3Id = type === 1 ? 'drive-3' : `drive-3-${type}`;
         const drive3Clone = document.getElementById(drive3Id);
-        console.log(`checkRows: drive-6-${type}, checking drive-3-${type}, found:`, !!drive3Clone);
         if (drive3Clone) {
           const drive3Text = drive3Clone.selectedOptions[0].text;
-          console.log(`checkRows: drive-3-${type} text = "${drive3Text}"`);
           const isSataOrSas = drive3Text === 'SATA' || drive3Text === 'SAS';
-          console.log(`checkRows: isSataOrSas = ${isSataOrSas}`);
           if (!isSataOrSas) {
             row.style.display = 'none';
             row.style.removeProperty('background-color');
@@ -575,20 +552,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const driveCount = parseInt(document.getElementById('driveCount').value) || 0;
     const excludeDrives = driveCount === 0;
 
-      // 4. Собираем drive-данные с учётом типов
-    const driveRows = allRows.filter(r => r.selectId && r.selectId.startsWith('drive-'));
-    const driveByType = {};
-    driveRows.forEach(row => {
-      // Определяем тип по id: drive-1, drive-2, ..., drive-1-2, drive-2-2, и т.д.
-      const parts = row.selectId.split('-');
-      const baseIndex = parseInt(parts[1]);
-      const typeMatch = row.selectId.match(/-(\d+)$/);
-      const type = typeMatch ? parseInt(typeMatch[1]) : 1;
-      
-      if (!driveByType[type]) driveByType[type] = {};
-      driveByType[type][baseIndex] = row;
-    });
-
     // 5. Проверяем drive-3-N: если не SATA и не SAS, исключаем drive-5-N
     const drive3Rows = allRows.filter(r => r.selectId && /^drive-3/.test(r.selectId));
     const drive3Values = {};
@@ -746,12 +709,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
 function applyPreset(presetName) {
   localStorage.removeItem('currentPreset');
-  console.log('=== applyPreset вызван с presetName:', presetName);
   
   const commonPromises = COMMON_FILES.map(file =>
     fetch(PRESETS_PATH + file)
       .then(res => {
-        console.log('Загружен:', PRESETS_PATH + file, 'статус:', res.status);
         if (!res.ok) throw new Error(`Ошибка загрузки ${file}`);
         return res.json();
       })
@@ -760,25 +721,20 @@ function applyPreset(presetName) {
   Promise.all(commonPromises)
     .then(commonResults => {
       const commonOptions = Object.assign({}, ...commonResults);
-      console.log('Общие файлы загружены, ключи:', Object.keys(commonOptions));
 
       const presetFile = PRESET_FILES[presetName];
-      console.log('Загрузка пресета:', PRESETS_PATH + presetFile);
       
       fetch(PRESETS_PATH + presetFile)
         .then(res => {
-          console.log('Пресет загружен, статус:', res.status);
           if (!res.ok) throw new Error(`Ошибка загрузки ${presetFile}`);
           return res.json();
         })
         .then(presetOptions => {
-          console.log('Пресет данные:', presetOptions);
           const allOptions = { ...commonOptions, ...presetOptions };
           updateSelects(allOptions);
           
           // Сохраняем drive-опции и применяем ко всем drive-селектам
           driveOptions = commonOptions;
-          console.log('driveOptions keys:', Object.keys(driveOptions).filter(k => k.startsWith('drive')));
           
           const driveSelects = document.querySelectorAll('[id^="drive-"]');
           driveSelects.forEach(select => {
@@ -800,8 +756,6 @@ function applyPreset(presetName) {
           if (driveCount > 1) {
             cloneDrives();
           } else {
-            updateDrive5AfterClone(1);
-            updateDrive6AfterClone(1);
             // Разблокированные drive-6 получают первое значение
             const drive6Selects = document.querySelectorAll('[id^="drive-6"]');
             const drive3 = document.getElementById('drive-3');
@@ -816,7 +770,6 @@ function applyPreset(presetName) {
           
           // Загружаем network-опции
           networkOptions = commonOptions;
-          console.log('networkOptions keys:', Object.keys(networkOptions).filter(k => k.startsWith('network')));
           
           const networkSelects = document.querySelectorAll('[id^="network-"]');
           networkSelects.forEach(select => {
