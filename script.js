@@ -291,7 +291,6 @@ function checkRows() {
         }
       }
       
-      // Не скрываем network-6 в UI — экспорт исключает их через network6DisabledMap
       // Скрываем network-6-N при блокировке (Ethernet)
       if (select.id && /^network-6/.test(select.id) && select.disabled) {
         row.style.display = 'none';
@@ -316,6 +315,102 @@ function checkRows() {
       }
     }
   });
+}
+
+// Сбор данных из таблицы с учётом исключений
+function collectTableData() {
+  const table = document.getElementById('dataTable');
+  const rows = table.querySelectorAll('tbody tr');
+  const allRows = [];
+  
+  rows.forEach(row => {
+    const select = row.querySelector('select');
+    const selectId = select ? select.id : null;
+    const fixedValue1 = row.cells[0].textContent.trim();
+    const selectedValue = select && select.selectedOptions.length > 0 ? select.selectedOptions[0].text : '';
+    const fixedValue2 = row.cells[2].textContent.trim();
+    allRows.push({ selectId, fixedValue1, selectedValue, fixedValue2 });
+  });
+
+  // Исключения по "Удалить"
+  const gpu1Row = allRows.find(r => r.selectId === 'gpu-1');
+  const excludeGpu = gpu1Row && gpu1Row.selectedValue.includes('Удалить');
+  const gpuKeysToExclude = ['gpu-2', 'gpu-3', 'gpu-4', 'gpu-5', 'gpu-6', 'gpu-7', 'gpu-8'];
+
+  const controller1Row = allRows.find(r => r.selectId === 'controller-1');
+  const excludeController = controller1Row && controller1Row.selectedValue.includes('Удалить');
+  const controllerKeysToExclude = ['controller-2', 'controller-3', 'controller-4', 'select-59'];
+
+  const hba1Row = allRows.find(r => r.selectId === 'hba-1');
+  const excludeHba = hba1Row && hba1Row.selectedValue.includes('Удалить');
+  const hbaKeysToExclude = ['hba-2', 'hba-3', 'hba-4'];
+
+  const controller3Row = allRows.find(r => r.selectId === 'controller-3');
+  const excludeController2 = controller3Row && controller3Row.selectedValue.includes('Удалить');
+
+  const driveCount = parseInt(document.getElementById('driveCount').value) || 0;
+  const excludeDrives = driveCount === 0;
+
+  // drive-3-N и drive-5-N для проверки типов
+  const drive3Rows = allRows.filter(r => r.selectId && /^drive-3/.test(r.selectId));
+  const drive3Values = {};
+  drive3Rows.forEach(row => {
+    const parts = row.selectId.split('-');
+    const baseIndex = parseInt(parts[1]);
+    const typeMatch = row.selectId.match(/-(\d+)$/);
+    const type = typeMatch ? parseInt(typeMatch[1]) : 1;
+    if (!drive3Values[type]) drive3Values[type] = {};
+    drive3Values[type][baseIndex] = row.selectedValue;
+  });
+
+  const drive5Rows = allRows.filter(r => r.selectId && /^drive-5/.test(r.selectId));
+  const drive5Values = {};
+  drive5Rows.forEach(row => {
+    const parts = row.selectId.split('-');
+    const baseIndex = parseInt(parts[1]);
+    const typeMatch = row.selectId.match(/-(\d+)$/);
+    const type = typeMatch ? parseInt(typeMatch[1]) : 1;
+    if (!drive5Values[type]) drive5Values[type] = {};
+    drive5Values[type][baseIndex] = row.selectedValue;
+  });
+
+  // Фильтрация
+  const data = [];
+  allRows.forEach(item => {
+    if (item.selectedValue.includes('Удалить')) return;
+    if (excludeDrives && item.selectId && item.selectId.startsWith('drive-')) return;
+    if (excludeGpu && gpuKeysToExclude.includes(item.selectId)) return;
+    if (excludeController && controllerKeysToExclude.includes(item.selectId)) return;
+    if (excludeController2 && item.selectId === 'controller-2') return;
+    if (excludeHba && hbaKeysToExclude.includes(item.selectId)) return;
+    if (item.selectId && /^drive-5/.test(item.selectId)) {
+      const parts = item.selectId.split('-');
+      const baseIndex = parseInt(parts[1]);
+      const typeMatch = item.selectId.match(/-(\d+)$/);
+      const type = typeMatch ? parseInt(typeMatch[1]) : 1;
+      // drive-5-N смотрит на drive-3-N (baseIndex=3), не на свой baseIndex
+      const drive3Value = drive3Values[type] ? drive3Values[type][3] : '';
+      if (drive3Value !== 'SATA' && drive3Value !== 'SAS') return;
+    }
+    if (item.selectId && /^drive-6/.test(item.selectId)) {
+      const parts = item.selectId.split('-');
+      const baseIndex = parseInt(parts[1]);
+      const typeMatch = item.selectId.match(/-(\d+)$/);
+      const type = typeMatch ? parseInt(typeMatch[1]) : 1;
+      // drive-6-N смотрит на drive-3-N (baseIndex=3) и drive-5-N (baseIndex=5)
+      const drive3Value = drive3Values[type] ? drive3Values[type][3] : '';
+      if (drive3Value !== 'SATA' && drive3Value !== 'SAS') return;
+      const drive5Value = drive5Values[type] ? drive5Values[type][5] : '';
+      if (drive5Value !== 'HDD') return;
+    }
+    if (item.selectId && /^network-6/.test(item.selectId)) {
+      const select = document.getElementById(item.selectId);
+      if (select && select.disabled) return;
+    }
+    data.push([item.fixedValue1, item.selectedValue, item.fixedValue2]);
+  });
+
+  return data;
 }
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -451,118 +546,7 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   document.getElementById('exportBtn').addEventListener('click', function () {
-    const table = document.getElementById('dataTable');
-    const rows = table.querySelectorAll('tbody tr');
-    const data = [];
-
-    // 1. Собираем все строки с их select id
-    const allRows = [];
-    rows.forEach(row => {
-      const select = row.querySelector('select');
-      const selectId = select ? select.id : null;
-      const fixedValue1 = row.cells[0].textContent.trim();
-      const selectedValue = select && select.selectedOptions.length > 0
-        ? select.selectedOptions[0].text
-        : '';
-      const fixedValue2 = row.cells[2].textContent.trim();
-      allRows.push({ selectId, fixedValue1, selectedValue, fixedValue2 });
-    });
-
-    // 2. Исключения по "Удалить"
-    const gpu1Row = allRows.find(r => r.selectId === 'gpu-1');
-    const excludeGpu = gpu1Row && gpu1Row.selectedValue.includes('Удалить');
-    const gpuKeysToExclude = ['gpu-2', 'gpu-3', 'gpu-4', 'gpu-5', 'gpu-6', 'gpu-7', 'gpu-8'];
-
-    const controller1Row = allRows.find(r => r.selectId === 'controller-1');
-    const excludeController = controller1Row && controller1Row.selectedValue.includes('Удалить');
-    const controllerKeysToExclude = ['controller-2', 'controller-3', 'controller-4', 'select-59'];
-
-    const hba1Row = allRows.find(r => r.selectId === 'hba-1');
-    const excludeHba = hba1Row && hba1Row.selectedValue.includes('Удалить');
-    const hbaKeysToExclude = ['hba-2', 'hba-3', 'hba-4'];
-
-    const controller3Row = allRows.find(r => r.selectId === 'controller-3');
-    const excludeController2 = controller3Row && controller3Row.selectedValue.includes('Удалить');
-
-    // 3. driveCount = 0 → исключить все drive-строки
-    const driveCount = parseInt(document.getElementById('driveCount').value) || 0;
-    const excludeDrives = driveCount === 0;
-
-    // 4. drive-3-N → drive-5-N и drive-6-N
-    const drive3Rows = allRows.filter(r => r.selectId && /^drive-3/.test(r.selectId));
-    const drive3Values = {};
-    drive3Rows.forEach(row => {
-      const parts = row.selectId.split('-');
-      const baseIndex = parseInt(parts[1]);
-      const typeMatch = row.selectId.match(/-(\d+)$/);
-      const type = typeMatch ? parseInt(typeMatch[1]) : 1;
-      if (!drive3Values[type]) drive3Values[type] = {};
-      drive3Values[type][baseIndex] = row.selectedValue;
-    });
-
-    const drive5Rows = allRows.filter(r => r.selectId && /^drive-5/.test(r.selectId));
-    const drive5Values = {};
-    drive5Rows.forEach(row => {
-      const parts = row.selectId.split('-');
-      const baseIndex = parseInt(parts[1]);
-      const typeMatch = row.selectId.match(/-(\d+)$/);
-      const type = typeMatch ? parseInt(typeMatch[1]) : 1;
-      if (!drive5Values[type]) drive5Values[type] = {};
-      drive5Values[type][baseIndex] = row.selectedValue;
-    });
-
-    // 5. network-2-N → network-6-N
-    allRows.forEach(item => {
-      // Пропускаем строки, если выбрано "Удалить"
-      if (item.selectedValue.includes('Удалить')) return;
-
-      // Пропускаем drive-строки, если driveCount = 0
-      if (excludeDrives && item.selectId && item.selectId.startsWith('drive-')) return;
-
-      // Пропускаем gpu-строки, если gpu-1 = "Удалить"
-      if (excludeGpu && gpuKeysToExclude.includes(item.selectId)) return;
-
-      // Пропускаем controller-строки, если controller-1 = "Удалить"
-      if (excludeController && controllerKeysToExclude.includes(item.selectId)) return;
-
-      // Пропускаем controller-2, если controller-3 = "Удалить"
-      if (excludeController2 && item.selectId === 'controller-2') return;
-
-      // Пропускаем hba-строки, если hba-1 = "Удалить"
-      if (excludeHba && hbaKeysToExclude.includes(item.selectId)) return;
-
-      // Пропускаем drive-5-N, если drive-3-N не SATA и не SAS
-      if (item.selectId && /^drive-5/.test(item.selectId)) {
-        const parts = item.selectId.split('-');
-        const baseIndex = parseInt(parts[1]);
-        const typeMatch = item.selectId.match(/-(\d+)$/);
-        const type = typeMatch ? parseInt(typeMatch[1]) : 1;
-        const drive3Value = drive3Values[type] ? drive3Values[type][baseIndex] : '';
-        const isSataOrSas = drive3Value === 'SATA' || drive3Value === 'SAS';
-        if (!isSataOrSas) return;
-      }
-
-      // Пропускаем drive-6-N, если drive-3-N не SATA/SAS ИЛИ drive-5-N не HDD
-      if (item.selectId && /^drive-6/.test(item.selectId)) {
-        const parts = item.selectId.split('-');
-        const baseIndex = parseInt(parts[1]);
-        const typeMatch = item.selectId.match(/-(\d+)$/);
-        const type = typeMatch ? parseInt(typeMatch[1]) : 1;
-        const drive3Value = drive3Values[type] ? drive3Values[type][baseIndex] : '';
-        const isSataOrSas = drive3Value === 'SATA' || drive3Value === 'SAS';
-        if (!isSataOrSas) return;
-        const drive5Value = drive5Values[type] ? drive5Values[type][baseIndex] : '';
-        if (drive5Value !== 'HDD') return;
-      }
-
-      // Пропускаем network-6-N, если заблокирована (network-2-N = Ethernet)
-      if (item.selectId && /^network-6/.test(item.selectId)) {
-        const select = document.getElementById(item.selectId);
-        if (select && select.disabled) return;
-      }
-
-      data.push([item.fixedValue1, item.selectedValue, item.fixedValue2]);
-    });
+    const data = collectTableData();
 
     // Создаём workbook
     const workbook = new ExcelJS.Workbook();
@@ -631,94 +615,7 @@ document.addEventListener('DOMContentLoaded', function () {
   document.getElementById('exportWordBtn').addEventListener('click', function () {
     const { Document, Packer, Table, TableRow, TableCell, WidthType, AlignmentType, BorderStyle, Paragraph, TextRun } = docx;
 
-    // Собираем данные (та же логика, что для Excel)
-    const table = document.getElementById('dataTable');
-    const rows = table.querySelectorAll('tbody tr');
-    const allRows = [];
-    rows.forEach(row => {
-      const select = row.querySelector('select');
-      const selectId = select ? select.id : null;
-      const fixedValue1 = row.cells[0].textContent.trim();
-      const selectedValue = select && select.selectedOptions.length > 0 ? select.selectedOptions[0].text : '';
-      const fixedValue2 = row.cells[2].textContent.trim();
-      allRows.push({ selectId, fixedValue1, selectedValue, fixedValue2 });
-    });
-
-    // Исключения
-    const gpu1Row = allRows.find(r => r.selectId === 'gpu-1');
-    const excludeGpu = gpu1Row && gpu1Row.selectedValue.includes('Удалить');
-    const gpuKeysToExclude = ['gpu-2', 'gpu-3', 'gpu-4', 'gpu-5', 'gpu-6', 'gpu-7', 'gpu-8'];
-
-    const controller1Row = allRows.find(r => r.selectId === 'controller-1');
-    const excludeController = controller1Row && controller1Row.selectedValue.includes('Удалить');
-    const controllerKeysToExclude = ['controller-2', 'controller-3', 'controller-4', 'select-59'];
-
-    const hba1Row = allRows.find(r => r.selectId === 'hba-1');
-    const excludeHba = hba1Row && hba1Row.selectedValue.includes('Удалить');
-    const hbaKeysToExclude = ['hba-2', 'hba-3', 'hba-4'];
-
-    const controller3Row = allRows.find(r => r.selectId === 'controller-3');
-    const excludeController2 = controller3Row && controller3Row.selectedValue.includes('Удалить');
-
-    const driveCount = parseInt(document.getElementById('driveCount').value) || 0;
-    const excludeDrives = driveCount === 0;
-
-    const drive3Rows = allRows.filter(r => r.selectId && /^drive-3/.test(r.selectId));
-    const drive3Values = {};
-    drive3Rows.forEach(row => {
-      const parts = row.selectId.split('-');
-      const baseIndex = parseInt(parts[1]);
-      const typeMatch = row.selectId.match(/-(\d+)$/);
-      const type = typeMatch ? parseInt(typeMatch[1]) : 1;
-      if (!drive3Values[type]) drive3Values[type] = {};
-      drive3Values[type][baseIndex] = row.selectedValue;
-    });
-
-    const drive5Rows = allRows.filter(r => r.selectId && /^drive-5/.test(r.selectId));
-    const drive5Values = {};
-    drive5Rows.forEach(row => {
-      const parts = row.selectId.split('-');
-      const baseIndex = parseInt(parts[1]);
-      const typeMatch = row.selectId.match(/-(\d+)$/);
-      const type = typeMatch ? parseInt(typeMatch[1]) : 1;
-      if (!drive5Values[type]) drive5Values[type] = {};
-      drive5Values[type][baseIndex] = row.selectedValue;
-    });
-
-    const data = [];
-    allRows.forEach(item => {
-      if (item.selectedValue.includes('Удалить')) return;
-      if (excludeDrives && item.selectId && item.selectId.startsWith('drive-')) return;
-      if (excludeGpu && gpuKeysToExclude.includes(item.selectId)) return;
-      if (excludeController && controllerKeysToExclude.includes(item.selectId)) return;
-      if (excludeController2 && item.selectId === 'controller-2') return;
-      if (excludeHba && hbaKeysToExclude.includes(item.selectId)) return;
-      if (item.selectId && /^drive-5/.test(item.selectId)) {
-        const parts = item.selectId.split('-');
-        const baseIndex = parseInt(parts[1]);
-        const typeMatch = item.selectId.match(/-(\d+)$/);
-        const type = typeMatch ? parseInt(typeMatch[1]) : 1;
-        const drive3Value = drive3Values[type] ? drive3Values[type][baseIndex] : '';
-        const isSataOrSas = drive3Value === 'SATA' || drive3Value === 'SAS';
-        if (!isSataOrSas) return;
-      }
-      if (item.selectId && /^drive-6/.test(item.selectId)) {
-        const parts = item.selectId.split('-');
-        const baseIndex = parseInt(parts[1]);
-        const typeMatch = item.selectId.match(/-(\d+)$/);
-        const type = typeMatch ? parseInt(typeMatch[1]) : 1;
-        const drive3Value = drive3Values[type] ? drive3Values[type][baseIndex] : '';
-        const isSataOrSas = drive3Value === 'SATA' || drive3Value === 'SAS';
-        if (!isSataOrSas) return;
-        const drive5Value = drive5Values[type] ? drive5Values[type][baseIndex] : '';
-        if (drive5Value !== 'HDD') return;
-      }
-      if (item.selectId && /^network-6/.test(item.selectId)) {
-        const select = document.getElementById(item.selectId);
-        if (select && select.disabled) return;
-      }
-      data.push([item.fixedValue1, item.selectedValue, item.fixedValue2]);
-    });
+    const data = collectTableData();
 
     // Создаём таблицу
     const borderStyle = {
