@@ -19,6 +19,17 @@ let currentPreset = localStorage.getItem('currentPreset') || 'standart';
 let driveOptions = {};
 let networkOptions = {};
 
+// Helper: включить/отключить селект и установить значение
+function toggleSelect(el, shouldDisable) {
+  if (!el) return;
+  el.disabled = shouldDisable;
+  if (shouldDisable) {
+    el.value = '';
+  } else {
+    el.value = el.options[0] ? el.options[0].value : '';
+  }
+}
+
 // Клонирование drive-строк
 function cloneDrives() {
   const count = parseInt(document.getElementById('driveCount').value) || 1;
@@ -92,15 +103,10 @@ function updateDriveAfterClone(count) {
       const isHdd = drive5Text === 'HDD';
       const shouldDisable = !isSataOrSas || !isHdd;
       
-      drive6Clone.disabled = shouldDisable;
       if (!isSataOrSas) {
         drive5Clone.value = drive5Clone.options[0] ? drive5Clone.options[0].value : '';
       }
-      if (shouldDisable) {
-        drive6Clone.value = '';
-      } else {
-        drive6Clone.value = drive6Clone.options[0] ? drive6Clone.options[0].value : '';
-      }
+      toggleSelect(drive6Clone, shouldDisable);
     }
   }
 }
@@ -170,12 +176,7 @@ function updateNetwork6() {
   const network6 = document.getElementById('network-6');
   if (!network6) return;
   
-  network6.disabled = isEthernet;
-  if (isEthernet) {
-    network6.value = '';
-  } else {
-    network6.value = network6.options[0] ? network6.options[0].value : '';
-  }
+  toggleSelect(network6, isEthernet);
   
   checkRows();
 }
@@ -187,12 +188,7 @@ function updateNetwork6AfterClone(count) {
   const network6 = document.getElementById('network-6');
   if (network2 && network6) {
     const isEthernet = network2.selectedOptions[0].text === 'Ethernet';
-    network6.disabled = isEthernet;
-    if (isEthernet) {
-      network6.value = '';
-    } else {
-      network6.value = network6.options[0] ? network6.options[0].value : '';
-    }
+    toggleSelect(network6, isEthernet);
   }
   
   // Клонированные network-6-N проверяют network-2-N
@@ -201,12 +197,7 @@ function updateNetwork6AfterClone(count) {
     const network6Clone = document.getElementById(`network-6-${type}`);
     if (network2Clone && network6Clone) {
       const isEthernet = network2Clone.selectedOptions[0].text === 'Ethernet';
-      network6Clone.disabled = isEthernet;
-      if (isEthernet) {
-        network6Clone.value = '';
-      } else {
-        network6Clone.value = network6Clone.options[0] ? network6Clone.options[0].value : '';
-      }
+      toggleSelect(network6Clone, isEthernet);
     }
   }
   
@@ -232,12 +223,7 @@ function updateDrive5() {
     const drive5Text = drive5.selectedOptions[0].text;
     const isHdd = drive5Text === 'HDD';
     const shouldDisable = !isSataOrSas || !isHdd;
-    drive6.disabled = shouldDisable;
-    if (shouldDisable) {
-      drive6.value = '';
-    } else {
-      drive6.value = drive6.options[0] ? drive6.options[0].value : '';
-    }
+    toggleSelect(drive6, shouldDisable);
   }
   
   checkRows();
@@ -257,12 +243,7 @@ function updateDrive6() {
     const drive3Text = drive3.selectedOptions[0].text;
     const isSataOrSas = drive3Text === 'SATA' || drive3Text === 'SAS';
     const shouldDisable = !isSataOrSas || !isHdd;
-    drive6.disabled = shouldDisable;
-    if (shouldDisable) {
-      drive6.value = '';
-    } else {
-      drive6.value = drive6.options[0] ? drive6.options[0].value : '';
-    }
+    toggleSelect(drive6, shouldDisable);
   }
   
   checkRows();
@@ -310,6 +291,7 @@ function checkRows() {
         }
       }
       
+      // Не скрываем network-6 в UI — экспорт исключает их через network6DisabledMap
       // Скрываем network-6-N при блокировке (Ethernet)
       if (select.id && /^network-6/.test(select.id) && select.disabled) {
         row.style.display = 'none';
@@ -366,28 +348,14 @@ document.addEventListener('DOMContentLoaded', function () {
     const shouldDisable = this.selectedOptions[0].text.includes('Удалить');
     controllerKeys.forEach(key => {
       const el = document.getElementById(key);
-      if (el) {
-        el.disabled = shouldDisable;
-        if (shouldDisable) {
-          el.value = '';
-        } else {
-          el.value = el.options[0] ? el.options[0].value : '';
-        }
-      }
+      toggleSelect(el, shouldDisable);
     });
   });
 
   // Контроллер-3: если "Удалить", очищаем controller-2
   document.getElementById('controller-3').addEventListener('change', function () {
     const shouldClear = this.selectedOptions[0].text.includes('Удалить');
-    const controller2 = document.getElementById('controller-2');
-    if (controller2) {
-      if (shouldClear) {
-        controller2.value = '';
-      } else {
-        controller2.value = controller2.options[0] ? controller2.options[0].value : '';
-      }
-    }
+    toggleSelect(document.getElementById('controller-2'), shouldClear);
   });
 
   // GPU: если gpu-1 = "Удалить", блокируем gpu-2...gpu-8
@@ -395,15 +363,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const gpuKeys = ['gpu-2', 'gpu-3', 'gpu-4', 'gpu-5', 'gpu-6', 'gpu-7', 'gpu-8'];
     const shouldDisable = this.selectedOptions[0].text.includes('Удалить');
     gpuKeys.forEach(key => {
-      const el = document.getElementById(key);
-      if (el) {
-        el.disabled = shouldDisable;
-        if (shouldDisable) {
-          el.value = '';
-        } else {
-          el.value = el.options[0] ? el.options[0].value : '';
-        }
-      }
+      toggleSelect(document.getElementById(key), shouldDisable);
     });
   });
 
@@ -412,15 +372,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const hbaKeys = ['hba-2', 'hba-3', 'hba-4'];
     const shouldDisable = this.selectedOptions[0].text.includes('Удалить');
     hbaKeys.forEach(key => {
-      const el = document.getElementById(key);
-      if (el) {
-        el.disabled = shouldDisable;
-        if (shouldDisable) {
-          el.value = '';
-        } else {
-          el.value = el.options[0] ? el.options[0].value : '';
-        }
-      }
+      toggleSelect(document.getElementById(key), shouldDisable);
     });
   });
 
@@ -444,22 +396,14 @@ document.addEventListener('DOMContentLoaded', function () {
           const drive6Clone = document.getElementById(`drive-6-${type}`);
           const isSataOrSas = select.selectedOptions[0].text === 'SATA' || select.selectedOptions[0].text === 'SAS';
           
-          // Если drive-3-N не SATA/SAS, drive-5-N = SSD
           if (drive5Clone && !isSataOrSas) {
             drive5Clone.value = drive5Clone.options[0] ? drive5Clone.options[0].value : '';
           }
           
-          // drive-6-N блокируется, если drive-3-N не SATA/SAS ИЛИ drive-5-N не HDD
           if (drive6Clone && drive5Clone) {
             const drive5Text = drive5Clone.selectedOptions[0].text;
             const isHdd = drive5Text === 'HDD';
-            const shouldDisable = !isSataOrSas || !isHdd;
-            drive6Clone.disabled = shouldDisable;
-            if (shouldDisable) {
-              drive6Clone.value = '';
-            } else {
-              drive6Clone.value = drive6Clone.options[0] ? drive6Clone.options[0].value : '';
-            }
+            toggleSelect(drive6Clone, !isSataOrSas || !isHdd);
           }
           checkRows();
         }
@@ -472,13 +416,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const isHdd = select.selectedOptions[0].text === 'HDD';
             const drive3Text = drive3Clone.selectedOptions[0].text;
             const isSataOrSas = drive3Text === 'SATA' || drive3Text === 'SAS';
-            const shouldDisable = !isSataOrSas || !isHdd;
-            drive6Clone.disabled = shouldDisable;
-            if (shouldDisable) {
-              drive6Clone.value = '';
-            } else {
-              drive6Clone.value = drive6Clone.options[0] ? drive6Clone.options[0].value : '';
-            }
+            toggleSelect(drive6Clone, !isSataOrSas || !isHdd);
             checkRows();
           }
         }
@@ -498,16 +436,9 @@ document.addEventListener('DOMContentLoaded', function () {
         // Если изменился network-N-TYPE, проверяем network-6-TYPE
         if (index === 2) {
           const network6Clone = document.getElementById(`network-6-${type}`);
-          if (network6Clone) {
-            const isEthernet = select.selectedOptions[0].text === 'Ethernet';
-            network6Clone.disabled = isEthernet;
-            if (isEthernet) {
-              network6Clone.value = '';
-            } else {
-              network6Clone.value = network6Clone.options[0] ? network6Clone.options[0].value : '';
-            }
-            checkRows();
-          }
+          const isEthernet = select.selectedOptions[0].text === 'Ethernet';
+          toggleSelect(network6Clone, isEthernet);
+          checkRows();
         }
       }
     });
@@ -537,30 +468,27 @@ document.addEventListener('DOMContentLoaded', function () {
       allRows.push({ selectId, fixedValue1, selectedValue, fixedValue2 });
     });
 
-    // 2. Проверяем gpu-1 — если "Удалить", исключаем gpu-2...gpu-8
+    // 2. Исключения по "Удалить"
     const gpu1Row = allRows.find(r => r.selectId === 'gpu-1');
     const excludeGpu = gpu1Row && gpu1Row.selectedValue.includes('Удалить');
     const gpuKeysToExclude = ['gpu-2', 'gpu-3', 'gpu-4', 'gpu-5', 'gpu-6', 'gpu-7', 'gpu-8'];
 
-    // 3. Проверяем controller-1 — если "Удалить", исключаем controller-2,3,4
     const controller1Row = allRows.find(r => r.selectId === 'controller-1');
     const excludeController = controller1Row && controller1Row.selectedValue.includes('Удалить');
     const controllerKeysToExclude = ['controller-2', 'controller-3', 'controller-4', 'select-59'];
 
-    // 4. Проверяем hba-1 — если "Удалить", исключаем hba-2, hba-3, hba-4
     const hba1Row = allRows.find(r => r.selectId === 'hba-1');
     const excludeHba = hba1Row && hba1Row.selectedValue.includes('Удалить');
     const hbaKeysToExclude = ['hba-2', 'hba-3', 'hba-4'];
 
-    // 5. Проверяем controller-3 — если "Удалить", исключаем controller-2
     const controller3Row = allRows.find(r => r.selectId === 'controller-3');
     const excludeController2 = controller3Row && controller3Row.selectedValue.includes('Удалить');
 
-    // 6. Проверяем driveCount — если 0, исключаем все drive-строки
+    // 3. driveCount = 0 → исключить все drive-строки
     const driveCount = parseInt(document.getElementById('driveCount').value) || 0;
     const excludeDrives = driveCount === 0;
 
-    // 5. Проверяем drive-3-N: если не SATA и не SAS, исключаем drive-5-N
+    // 4. drive-3-N → drive-5-N и drive-6-N
     const drive3Rows = allRows.filter(r => r.selectId && /^drive-3/.test(r.selectId));
     const drive3Values = {};
     drive3Rows.forEach(row => {
@@ -572,7 +500,6 @@ document.addEventListener('DOMContentLoaded', function () {
       drive3Values[type][baseIndex] = row.selectedValue;
     });
 
-    // 6. Проверяем drive-5-N: если не HDD, исключаем drive-6-N
     const drive5Rows = allRows.filter(r => r.selectId && /^drive-5/.test(r.selectId));
     const drive5Values = {};
     drive5Rows.forEach(row => {
@@ -584,18 +511,7 @@ document.addEventListener('DOMContentLoaded', function () {
       drive5Values[type][baseIndex] = row.selectedValue;
     });
 
-    // 7. Проверяем network-2-N: network-6-N исключается из выгрузки если network-2-N = Ethernet
-    const allNetwork6Selects = document.querySelectorAll('[id^="network-6"]');
-    const network6DisabledMap = {};
-    allNetwork6Selects.forEach(select => {
-      const match = select.id.match(/^network-6(-(\d+))?$/);
-      if (match) {
-        const type = match[2] ? parseInt(match[2]) : 1;
-        network6DisabledMap[type] = select.disabled;
-      }
-    });
-
-    // 5. Собираем данные с учётом исключений
+    // 5. network-2-N → network-6-N
     allRows.forEach(item => {
       // Пропускаем строки, если выбрано "Удалить"
       if (item.selectedValue.includes('Удалить')) return;
@@ -641,11 +557,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
       // Пропускаем network-6-N, если заблокирована (network-2-N = Ethernet)
       if (item.selectId && /^network-6/.test(item.selectId)) {
-        const parts = item.selectId.split('-');
-        const baseIndex = parseInt(parts[1]);
-        const typeMatch = item.selectId.match(/-(\d+)$/);
-        const type = typeMatch ? parseInt(typeMatch[1]) : 1;
-        if (network6DisabledMap[type]) return;
+        const select = document.getElementById(item.selectId);
+        if (select && select.disabled) return;
       }
 
       data.push([item.fixedValue1, item.selectedValue, item.fixedValue2]);
@@ -764,16 +677,8 @@ function applyPreset(presetName) {
           if (driveCount > 1) {
             cloneDrives();
           } else {
-            // Разблокированные drive-6 получают первое значение
-            const drive6Selects = document.querySelectorAll('[id^="drive-6"]');
-            const drive3 = document.getElementById('drive-3');
-            const drive3Text = drive3 ? drive3.selectedOptions[0].text : '';
-            const isSataOrSas = drive3Text === 'SATA' || drive3Text === 'SAS';
-            if (isSataOrSas) {
-              drive6Selects.forEach(select => {
-                select.value = select.options[0] ? select.options[0].value : '';
-              });
-            }
+            updateDrive5();
+            updateDrive6();
           }
           
           // Загружаем network-опции
