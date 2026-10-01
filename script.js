@@ -626,6 +626,156 @@ document.addEventListener('DOMContentLoaded', function () {
       window.URL.revokeObjectURL(url);
     });
   });
+
+  // Экспорт в Word
+  document.getElementById('exportWordBtn').addEventListener('click', function () {
+    const { Document, Packer, Table, TableRow, TableCell, WidthType, AlignmentType, BorderStyle, Paragraph, TextRun } = docx;
+
+    // Собираем данные (та же логика, что для Excel)
+    const table = document.getElementById('dataTable');
+    const rows = table.querySelectorAll('tbody tr');
+    const allRows = [];
+    rows.forEach(row => {
+      const select = row.querySelector('select');
+      const selectId = select ? select.id : null;
+      const fixedValue1 = row.cells[0].textContent.trim();
+      const selectedValue = select && select.selectedOptions.length > 0 ? select.selectedOptions[0].text : '';
+      const fixedValue2 = row.cells[2].textContent.trim();
+      allRows.push({ selectId, fixedValue1, selectedValue, fixedValue2 });
+    });
+
+    // Исключения
+    const gpu1Row = allRows.find(r => r.selectId === 'gpu-1');
+    const excludeGpu = gpu1Row && gpu1Row.selectedValue.includes('Удалить');
+    const gpuKeysToExclude = ['gpu-2', 'gpu-3', 'gpu-4', 'gpu-5', 'gpu-6', 'gpu-7', 'gpu-8'];
+
+    const controller1Row = allRows.find(r => r.selectId === 'controller-1');
+    const excludeController = controller1Row && controller1Row.selectedValue.includes('Удалить');
+    const controllerKeysToExclude = ['controller-2', 'controller-3', 'controller-4', 'select-59'];
+
+    const hba1Row = allRows.find(r => r.selectId === 'hba-1');
+    const excludeHba = hba1Row && hba1Row.selectedValue.includes('Удалить');
+    const hbaKeysToExclude = ['hba-2', 'hba-3', 'hba-4'];
+
+    const controller3Row = allRows.find(r => r.selectId === 'controller-3');
+    const excludeController2 = controller3Row && controller3Row.selectedValue.includes('Удалить');
+
+    const driveCount = parseInt(document.getElementById('driveCount').value) || 0;
+    const excludeDrives = driveCount === 0;
+
+    const drive3Rows = allRows.filter(r => r.selectId && /^drive-3/.test(r.selectId));
+    const drive3Values = {};
+    drive3Rows.forEach(row => {
+      const parts = row.selectId.split('-');
+      const baseIndex = parseInt(parts[1]);
+      const typeMatch = row.selectId.match(/-(\d+)$/);
+      const type = typeMatch ? parseInt(typeMatch[1]) : 1;
+      if (!drive3Values[type]) drive3Values[type] = {};
+      drive3Values[type][baseIndex] = row.selectedValue;
+    });
+
+    const drive5Rows = allRows.filter(r => r.selectId && /^drive-5/.test(r.selectId));
+    const drive5Values = {};
+    drive5Rows.forEach(row => {
+      const parts = row.selectId.split('-');
+      const baseIndex = parseInt(parts[1]);
+      const typeMatch = row.selectId.match(/-(\d+)$/);
+      const type = typeMatch ? parseInt(typeMatch[1]) : 1;
+      if (!drive5Values[type]) drive5Values[type] = {};
+      drive5Values[type][baseIndex] = row.selectedValue;
+    });
+
+    const data = [];
+    allRows.forEach(item => {
+      if (item.selectedValue.includes('Удалить')) return;
+      if (excludeDrives && item.selectId && item.selectId.startsWith('drive-')) return;
+      if (excludeGpu && gpuKeysToExclude.includes(item.selectId)) return;
+      if (excludeController && controllerKeysToExclude.includes(item.selectId)) return;
+      if (excludeController2 && item.selectId === 'controller-2') return;
+      if (excludeHba && hbaKeysToExclude.includes(item.selectId)) return;
+      if (item.selectId && /^drive-5/.test(item.selectId)) {
+        const parts = item.selectId.split('-');
+        const baseIndex = parseInt(parts[1]);
+        const typeMatch = item.selectId.match(/-(\d+)$/);
+        const type = typeMatch ? parseInt(typeMatch[1]) : 1;
+        const drive3Value = drive3Values[type] ? drive3Values[type][baseIndex] : '';
+        const isSataOrSas = drive3Value === 'SATA' || drive3Value === 'SAS';
+        if (!isSataOrSas) return;
+      }
+      if (item.selectId && /^drive-6/.test(item.selectId)) {
+        const parts = item.selectId.split('-');
+        const baseIndex = parseInt(parts[1]);
+        const typeMatch = item.selectId.match(/-(\d+)$/);
+        const type = typeMatch ? parseInt(typeMatch[1]) : 1;
+        const drive3Value = drive3Values[type] ? drive3Values[type][baseIndex] : '';
+        const isSataOrSas = drive3Value === 'SATA' || drive3Value === 'SAS';
+        if (!isSataOrSas) return;
+        const drive5Value = drive5Values[type] ? drive5Values[type][baseIndex] : '';
+        if (drive5Value !== 'HDD') return;
+      }
+      if (item.selectId && /^network-6/.test(item.selectId)) {
+        const select = document.getElementById(item.selectId);
+        if (select && select.disabled) return;
+      }
+      data.push([item.fixedValue1, item.selectedValue, item.fixedValue2]);
+    });
+
+    // Создаём таблицу
+    const borderStyle = {
+      top: { style: BorderStyle.SINGLE, size: 4, color: '000000' },
+      bottom: { style: BorderStyle.SINGLE, size: 4, color: '000000' },
+      left: { style: BorderStyle.SINGLE, size: 4, color: '000000' },
+      right: { style: BorderStyle.SINGLE, size: 4, color: '000000' }
+    };
+
+    const headerCellProps = {
+      borders: borderStyle,
+      children: [new Paragraph({
+        children: [new TextRun({ text: '', bold: true })],
+        alignment: AlignmentType.CENTER
+      })]
+    };
+
+    const rowsDoc = [];
+
+    // Заголовок (8.44см = 3040 DXA, 5.25см = 1890 DXA, 4.13см = 1490 DXA)
+    const headerRow = new TableRow({
+      children: [
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Наименование характеристики', bold: true })], alignment: AlignmentType.CENTER })], borders: borderStyle, width: { size: 4040, type: WidthType.DXA }}),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Значение характеристики', bold: true })], alignment: AlignmentType.CENTER })], borders: borderStyle, width: { size: 2890, type: WidthType.DXA } }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Единица измерения характеристики', bold: true })], alignment: AlignmentType.CENTER })], borders: borderStyle, width: { size: 1490, type: WidthType.DXA } })
+      ]
+    });
+    rowsDoc.push(headerRow);
+
+    // Данные
+    data.forEach(row => {
+      const dataRow = new TableRow({
+        children: [
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: row[0], wrap: true })], alignment: AlignmentType.LEFT })], borders: borderStyle, width: { size: 4040, type: WidthType.DXA }}),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: row[1] })], alignment: AlignmentType.CENTER })], borders: borderStyle, width: { size: 2890, type: WidthType.DXA }}),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: row[2] })], alignment: AlignmentType.CENTER })], borders: borderStyle, width: { size: 1490, type: WidthType.DXA }})
+        ]
+      });
+      rowsDoc.push(dataRow);
+    });
+
+    const doc = new Document({
+      sections: [{
+        properties: {},
+        children: [new Table({ rows: rowsDoc, width: { size: 6420, type: WidthType.DXA } })]
+      }]
+    });
+
+    Packer.toBlob(doc).then(blob => {
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = 'export.docx';
+      anchor.click();
+      window.URL.revokeObjectURL(url);
+    });
+  });
 });
 
 function applyPreset(presetName) {
