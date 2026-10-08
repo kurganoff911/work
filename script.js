@@ -95,7 +95,6 @@ function updateDriveAfterClone(count) {
     const drive5Clone = document.getElementById(`drive-5-${type}`);
     const drive6Clone = document.getElementById(`drive-6-${type}`);
     
-    // drive-6-N блокируется, если drive-3-N не SATA/SAS ИЛИ drive-5-N не HDD
     if (drive3Clone && drive5Clone && drive6Clone) {
       const drive3Text = drive3Clone.selectedOptions[0].text;
       const drive5Text = drive5Clone.selectedOptions[0].text;
@@ -267,8 +266,6 @@ function checkRows() {
     if (select) {
       // Скрываем drive-6-N при drive-3-N не SATA/SAS ИЛИ drive-5-N не HDD
       if (select.id && /^drive-6/.test(select.id)) {
-        const parts = select.id.split('-');
-        const baseIndex = parseInt(parts[1]);
         const typeMatch = select.id.match(/-(\d+)$/);
         const type = typeMatch ? parseInt(typeMatch[1]) : 1;
         
@@ -351,91 +348,78 @@ function collectTableData() {
   const driveCount = parseInt(document.getElementById('driveCount').value) || 0;
   const excludeDrives = driveCount === 0;
 
-  // drive-3-N и drive-5-N для проверки типов
-  const drive3Rows = allRows.filter(r => r.selectId && /^drive-3/.test(r.selectId));
-  const drive3Values = {};
-  drive3Rows.forEach(row => {
-    const parts = row.selectId.split('-');
-    const baseIndex = parseInt(parts[1]);
-    const typeMatch = row.selectId.match(/-(\d+)$/);
-    const type = typeMatch ? parseInt(typeMatch[1]) : 1;
-    if (!drive3Values[type]) drive3Values[type] = {};
-    drive3Values[type][baseIndex] = row.selectedValue;
-  });
-
-  const drive5Rows = allRows.filter(r => r.selectId && /^drive-5/.test(r.selectId));
-  const drive5Values = {};
-  drive5Rows.forEach(row => {
-    const parts = row.selectId.split('-');
-    const baseIndex = parseInt(parts[1]);
-    const typeMatch = row.selectId.match(/-(\d+)$/);
-    const type = typeMatch ? parseInt(typeMatch[1]) : 1;
-    if (!drive5Values[type]) drive5Values[type] = {};
-    drive5Values[type][baseIndex] = row.selectedValue;
-  });
-
-  // Фильтрация
-  const data = [];
-  allRows.forEach(item => {
-    if (item.selectedValue.includes('Удалить')) return;
-    if (excludeDrives && item.selectId && item.selectId.startsWith('drive-')) return;
-    if (excludeGpu && gpuKeysToExclude.includes(item.selectId)) return;
-    if (excludeController && controllerKeysToExclude.includes(item.selectId)) return;
-    if (excludeController2 && item.selectId === 'controller-2') return;
-    if (excludeHba && hbaKeysToExclude.includes(item.selectId)) return;
-    if (item.selectId && /^drive-5/.test(item.selectId)) {
-      const parts = item.selectId.split('-');
-      const baseIndex = parseInt(parts[1]);
-      const typeMatch = item.selectId.match(/-(\d+)$/);
+    // drive-3-N и drive-5-N для проверки типов
+    const drive3Rows = allRows.filter(r => r.selectId && /^drive-3/.test(r.selectId));
+    const drive3Values = {};
+    drive3Rows.forEach(row => {
+      const typeMatch = row.selectId.match(/-(\d+)$/);
       const type = typeMatch ? parseInt(typeMatch[1]) : 1;
-      // drive-5-N смотрит на drive-3-N (baseIndex=3), не на свой baseIndex
-      const drive3Value = drive3Values[type] ? drive3Values[type][3] : '';
-      if (drive3Value !== 'SATA' && drive3Value !== 'SAS') return;
-    }
-    if (item.selectId && /^drive-6/.test(item.selectId)) {
-      const parts = item.selectId.split('-');
-      const baseIndex = parseInt(parts[1]);
-      const typeMatch = item.selectId.match(/-(\d+)$/);
+      if (!drive3Values[type]) drive3Values[type] = {};
+      drive3Values[type][3] = row.selectedValue;
+    });
+
+    const drive5Rows = allRows.filter(r => r.selectId && /^drive-5/.test(r.selectId));
+    const drive5Values = {};
+    drive5Rows.forEach(row => {
+      const typeMatch = row.selectId.match(/-(\d+)$/);
       const type = typeMatch ? parseInt(typeMatch[1]) : 1;
-      // drive-6-N смотрит на drive-3-N (baseIndex=3) и drive-5-N (baseIndex=5)
-      const drive3Value = drive3Values[type] ? drive3Values[type][3] : '';
-      if (drive3Value !== 'SATA' && drive3Value !== 'SAS') return;
-      const drive5Value = drive5Values[type] ? drive5Values[type][5] : '';
-      if (drive5Value !== 'HDD') return;
-    }
-    if (item.selectId && /^network-6/.test(item.selectId)) {
-      const select = document.getElementById(item.selectId);
-      if (select && select.disabled) return;
-    }
-    data.push([item.fixedValue1, item.selectedValue, item.fixedValue2]);
-  });
+      if (!drive5Values[type]) drive5Values[type] = {};
+      drive5Values[type][5] = row.selectedValue;
+    });
+
+    // Фильтрация
+    const data = [];
+    allRows.forEach(item => {
+      if (item.selectedValue.includes('Удалить')) return;
+      if (excludeDrives && item.selectId && item.selectId.startsWith('drive-')) return;
+      if (excludeGpu && gpuKeysToExclude.includes(item.selectId)) return;
+      if (excludeController && controllerKeysToExclude.includes(item.selectId)) return;
+      if (excludeController2 && item.selectId === 'controller-2') return;
+      if (excludeHba && hbaKeysToExclude.includes(item.selectId)) return;
+      if (item.selectId && /^drive-5/.test(item.selectId)) {
+        const typeMatch = item.selectId.match(/-(\d+)$/);
+        const type = typeMatch ? parseInt(typeMatch[1]) : 1;
+        const drive3Value = drive3Values[type] ? drive3Values[type][3] : '';
+        if (drive3Value !== 'SATA' && drive3Value !== 'SAS') return;
+      }
+      if (item.selectId && /^drive-6/.test(item.selectId)) {
+        const typeMatch = item.selectId.match(/-(\d+)$/);
+        const type = typeMatch ? parseInt(typeMatch[1]) : 1;
+        const drive3Value = drive3Values[type] ? drive3Values[type][3] : '';
+        if (drive3Value !== 'SATA' && drive3Value !== 'SAS') return;
+        const drive5Value = drive5Values[type] ? drive5Values[type][5] : '';
+        if (drive5Value !== 'HDD') return;
+      }
+      if (item.selectId && /^network-6/.test(item.selectId)) {
+        const select = document.getElementById(item.selectId);
+        if (select && select.disabled) return;
+      }
+      data.push([item.fixedValue1, item.selectedValue, item.fixedValue2]);
+    });
 
   return data;
 }
 
+let NOTE_TEXTS = {};
+
 document.addEventListener('DOMContentLoaded', function () {
+  // Загружаем тексты примечаний
+  fetch(PRESETS_PATH + 'notes.json')
+    .then(res => res.json())
+    .then(notes => { NOTE_TEXTS = notes; })
+    .catch(err => console.error('Ошибка загрузки notes.json:', err));
+
   applyPreset(currentPreset);
 
   document.getElementById('presetSelector').addEventListener('change', function (e) {
     applyPreset(e.target.value);
   });
 
-  document.getElementById('driveCount').addEventListener('input', function () {
-    cloneDrives();
-    checkRows();
-  });
+  document.getElementById('driveCount').addEventListener('input', cloneDrives);
+  document.getElementById('applyDriveBtn').addEventListener('click', cloneDrives);
 
-  document.getElementById('applyDriveBtn').addEventListener('click', function () {
-    cloneDrives();
-  });
-
-  document.getElementById('networkCount').addEventListener('input', function () {
-    cloneNetworks();
-  });
-
-  document.getElementById('applyNetworkBtn').addEventListener('click', function () {
-    cloneNetworks();
-  });
+  document.getElementById('networkCount').addEventListener('input', cloneNetworks);
+  document.getElementById('applyNetworkBtn').addEventListener('click', cloneNetworks);
 
   // Контроллер: если controller-1 = "Удалить", блокируем controller-2,3,4 и select-59
   document.getElementById('controller-1').addEventListener('change', function () {
@@ -564,6 +548,16 @@ document.addEventListener('DOMContentLoaded', function () {
       worksheet.addRow({ name: row[0], value: row[1], unit: row[2] });
     });
 
+    // Добавляем примечание
+    const noteValue = document.getElementById('noteSelector').value;
+    if (noteValue && NOTE_TEXTS[noteValue]) {
+      // 2 пустые строки
+      worksheet.addRow({ name: '', value: '', unit: '' });
+      worksheet.addRow({ name: '', value: '', unit: '' });
+      // Текст примечания в первой колонке
+      worksheet.addRow({ name: NOTE_TEXTS[noteValue], value: '', unit: '' });
+    }
+
     // Применяем стили
     const borderStyle = {
       style: 'thin',
@@ -625,14 +619,6 @@ document.addEventListener('DOMContentLoaded', function () {
       right: { style: BorderStyle.SINGLE, size: 4, color: '000000' }
     };
 
-    const headerCellProps = {
-      borders: borderStyle,
-      children: [new Paragraph({
-        children: [new TextRun({ text: '', bold: true })],
-        alignment: AlignmentType.CENTER
-      })]
-    };
-
     const rowsDoc = [];
 
     // Заголовок (8.44см = 3040 DXA, 5.25см = 1890 DXA, 4.13см = 1490 DXA)
@@ -657,10 +643,29 @@ document.addEventListener('DOMContentLoaded', function () {
       rowsDoc.push(dataRow);
     });
 
+    // Добавляем примечание как текст на странице
+    const noteValue = document.getElementById('noteSelector').value;
+    const noteParagraphs = [];
+    if (noteValue && NOTE_TEXTS[noteValue]) {
+      // 2 пустые строки (отступ)
+      noteParagraphs.push(new Paragraph({ children: [] }));
+      noteParagraphs.push(new Paragraph({ children: [] }));
+      // Текст примечания: разбиваем по переносам строк
+      const noteLines = NOTE_TEXTS[noteValue].split('\n');
+      noteLines.forEach((line, index) => {
+        noteParagraphs.push(new Paragraph({
+          children: [new TextRun({ text: line.trim(), wrap: true })]
+        }));
+      });
+    }
+
     const doc = new Document({
       sections: [{
         properties: {},
-        children: [new Table({ rows: rowsDoc, width: { size: 6420, type: WidthType.DXA } })]
+        children: [
+          new Table({ rows: rowsDoc, width: { size: 6420, type: WidthType.DXA } }),
+          ...noteParagraphs
+        ]
       }]
     });
 
@@ -758,29 +763,11 @@ function applyPreset(presetName) {
           // Проверка и подсветка строк
           checkRows();
           
-          // Инициализируем GPU: если gpu-1 = "Удалить", блокируем gpu-2...gpu-8
-          const gpu1Init = document.getElementById('gpu-1');
-          if (gpu1Init) {
-            gpu1Init.dispatchEvent(new Event('change'));
-          }
-          
-          // Инициализируем controller-1: если "Удалить", блокируем controller-2,3,4 и select-59
-          const controller1Init = document.getElementById('controller-1');
-          if (controller1Init) {
-            controller1Init.dispatchEvent(new Event('change'));
-          }
-          
-          // Инициализируем hba-1: если "Удалить", блокируем hba-2,3,4
-          const hba1Init = document.getElementById('hba-1');
-          if (hba1Init) {
-            hba1Init.dispatchEvent(new Event('change'));
-          }
-          
-          // Инициализируем controller-3: если "Удалить", очищаем controller-2
-          const controller3Init = document.getElementById('controller-3');
-          if (controller3Init) {
-            controller3Init.dispatchEvent(new Event('change'));
-          }
+          // Инициализация: запускаем обработчики для "Удалить"
+          ['gpu-1', 'controller-1', 'hba-1', 'controller-3'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.dispatchEvent(new Event('change'));
+          });
           
           currentPreset = presetName;
           localStorage.setItem('currentPreset', presetName);
@@ -804,13 +791,7 @@ function updateSelects(options) {
         option.textContent = optText;
         select.appendChild(option);
       });
-
-      // Если доступно только одно значение — делаем поле неактивным
-      if (options[selectId].length <= 1) {
-        select.disabled = true;
-      } else {
-        select.disabled = false;
-      }
+      select.disabled = options[selectId].length <= 1;
     }
   }
 }
