@@ -602,6 +602,19 @@
         </section>
       </main> 
 
-      <script src="./script.js"></script>    
+      <!-- Модули (порядок важен!) -->
+      <script src="./scripts/config.js"></script>
+      <script src="./scripts/utils.js"></script>
+      <script src="./scripts/cloning.js"></script>
+      <script src="./scripts/validation.js"></script>
+      <script src="./scripts/table.js"></script>
+      <script src="./scripts/export.js"></script>
+      <script src="./scripts/presets.js"></script>
+      <script src="./scripts/events.js"></script>
+      
+      <!-- Инициализация -->
+      <script>
+        document.addEventListener('DOMContentLoaded', initEvents);
+      </script>
     </body>
   </html>
