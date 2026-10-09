@@ -608,6 +608,11 @@
       </main> 
 
       <!-- Модули (порядок важен!) -->
+      <script src="./lib/docx.js"></script>
+      <script>
+        // Устанавливаем docx в глобальную область видимости
+        window.docx = docx;
+      </script>
       <script src="./scripts/config.js"></script>
       <script src="./scripts/utils.js"></script>
       <script src="./scripts/cloning.js"></script>

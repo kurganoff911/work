@@ -40,6 +40,7 @@ function cloneHba() {
         const options = driveOptions[`hba-${index + 1}`];
         if (options) {
           populateSelect(select, options);
+          applySingleLongOption(select);
         }
       }
 
@@ -84,6 +85,7 @@ function cloneDrives() {
         const options = driveOptions[`drive-${index + 1}`];
         if (options) {
           populateSelect(select, options);
+          applySingleLongOption(select);
         }
       }
 
@@ -155,6 +157,7 @@ function cloneNetworks() {
         const options = networkOptions[`network-${index + 1}`];
         if (options) {
           populateSelect(select, options);
+          applySingleLongOption(select);
         }
       }
 
@@ -184,4 +187,40 @@ function populateSelect(select, options) {
     option.textContent = optText;
     select.appendChild(option);
   });
+}
+
+/**
+ * Если в селекте одна опция и текст длинный — показать как текст
+ * @param {HTMLElement} select - элемент select
+ */
+function applySingleLongOption(select) {
+  if (!select || !select.options || select.options.length !== 1) return;
+
+  const TEXT_THRESHOLD = 30;
+  const text = select.options[0].text;
+
+  if (text.length > TEXT_THRESHOLD) {
+    // Сохраняем ID селекта в data-атрибут строки
+    const row = select.closest('tr');
+    if (row) {
+      row.dataset.selectId = select.id;
+    }
+
+    // Заменяем select на span с текстом
+    const span = document.createElement('span');
+    span.textContent = text;
+    span.style.whiteSpace = 'normal';
+    span.style.wordWrap = 'break-word';
+    span.style.display = 'block';
+
+    const cell = select.closest('td');
+    if (cell) {
+      cell.innerHTML = '';
+      cell.appendChild(span);
+      // Помечаем строку для подсветки
+      row.classList.add('single-option-row');
+      // Сразу применяем зелёный фон (как для единственной опции)
+      row.style.backgroundColor = '#90EE90';
+    }
+  }
 }

@@ -142,8 +142,10 @@ function exportToWord() {
     right: { style: BorderStyle.SINGLE, size: 4, color: '000000' }
   };
 
-  const rowsDoc = createWordTableRows(data, borderStyle);
-  const noteParagraphs = createNoteParagraphs();
+  const rowsDoc = createWordTableRows(data, borderStyle, {
+    TableRow, TableCell, Paragraph, TextRun, AlignmentType, WidthType
+  });
+  const noteParagraphs = createNoteParagraphs({ Paragraph, TextRun });
 
   // Создаём документ
   const doc = new Document({
@@ -157,16 +159,18 @@ function exportToWord() {
   });
 
   // Скачиваем файл
-  downloadWordFile(doc);
+  downloadWordFile(doc, Packer);
 }
 
 /**
  * Создать строки таблицы для Word
  * @param {string[][]} data - данные
  * @param {Object} borderStyle - стиль границ
+ * @param {Object} docx - объекты docx
  * @returns {Array} массив строк
  */
-function createWordTableRows(data, borderStyle) {
+function createWordTableRows(data, borderStyle, docx) {
+  const { TableRow, TableCell, Paragraph, TextRun, AlignmentType, WidthType } = docx;
   const rowsDoc = [];
 
   // Заголовок
@@ -238,9 +242,11 @@ function createWordTableRows(data, borderStyle) {
 
 /**
  * Создать параграфы примечания
+ * @param {Object} docx - объекты docx
  * @returns {Array} массив параграфов
  */
-function createNoteParagraphs() {
+function createNoteParagraphs(docx) {
+  const { Paragraph, TextRun } = docx;
   const noteValue = getElement(CONFIG.ELEMENTS.NOTE_SELECTOR).value;
   const noteParagraphs = [];
 
@@ -264,8 +270,9 @@ function createNoteParagraphs() {
 /**
  * Скачать Word файл
  * @param {Document} doc - документ
+ * @param {Object} Packer - объект Packer
  */
-function downloadWordFile(doc) {
+function downloadWordFile(doc, Packer) {
   Packer.toBlob(doc).then(blob => {
     const url = window.URL.createObjectURL(blob);
     const anchor = document.createElement('a');

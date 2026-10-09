@@ -29,7 +29,14 @@ function checkRows() {
 
   rows.forEach(row => {
     const select = row.querySelector('select');
-    if (!select) return;
+    if (!select) {
+      // Если select заменён на span (длинный текст), подсвечиваем зелёным
+      if (row.classList.contains('single-option-row')) {
+        row.style.display = '';
+        row.style.backgroundColor = CONFIG.STYLES.DISABLED_ROW;
+      }
+      return;
+    }
 
     // Скрываем drive-6-N при drive-3-N не SATA/SAS ИЛИ drive-5-N не HDD
     if (/^drive-6/.test(select.id)) {
@@ -135,9 +142,21 @@ function collectAllRows(rows) {
 
   rows.forEach(row => {
     const select = row.querySelector('select');
-    const selectId = select ? select.id : null;
+    let selectId = select ? select.id : null;
+    let selectedValue = select && select.selectedOptions.length > 0 ? getSelectedText(select) : '';
+
+    // Если select заменён на span (длинный текст), берём текст из span
+    if (!select) {
+      const span = row.querySelector('span');
+      if (span) {
+        // Извлекаем ID из класса span (например, single-option-row не содержит ID)
+        // Берём ID из первого select в строке (если был) или из data-атрибута
+        selectId = row.dataset.selectId || null;
+        selectedValue = span.textContent.trim();
+      }
+    }
+
     const fixedValue1 = row.cells[0].textContent.trim();
-    const selectedValue = select && select.selectedOptions.length > 0 ? getSelectedText(select) : '';
     const fixedValue2 = row.cells[2].textContent.trim();
     allRows.push({ selectId, fixedValue1, selectedValue, fixedValue2 });
   });

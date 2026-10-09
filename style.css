@@ -64,7 +64,7 @@ p {
 
 #dataTable td,
 #dataTable th {
-  border: 1px solid #000;
+  border: 1px solid #D3D3D3;
   padding: 4px;
 }
 
@@ -82,6 +82,28 @@ p {
   word-wrap: break-word;
   overflow-wrap: break-word;
   text-overflow: clip;
+}
+
+/* Селекты с одной опцией — показываем как текст */
+#dataTable select.single-option {
+  min-height: auto;
+  background: transparent;
+  border: none;
+  cursor: default;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Селекты с длинным текстом — показываем все опции */
+#dataTable select.show-all {
+  height: auto;
+  min-height: auto;
+  background: #fff;
+  border: 1px solid #ccc;
 }
 
 #dataTable td {

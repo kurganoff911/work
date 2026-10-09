@@ -86,6 +86,7 @@ function applyDriveOptions(options) {
     const opts = options[`drive-${driveIndex}`];
     if (opts) {
       populateSelect(select, opts);
+      applySingleLongOption(select);
     }
   });
 
@@ -113,6 +114,7 @@ function applyNetworkOptions(options) {
     const opts = options[`network-${networkIndex}`];
     if (opts) {
       populateSelect(select, opts);
+      applySingleLongOption(select);
     }
   });
 
@@ -181,6 +183,7 @@ function updateSelects(options) {
     const select = getElement(selectId);
     if (select) {
       populateSelect(select, options[selectId]);
+      applySingleLongOption(select);
       select.disabled = options[selectId].length <= 1;
     }
   }
