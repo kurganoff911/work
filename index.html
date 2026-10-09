@@ -61,31 +61,31 @@
               <td>Количество установленных процессоров</td>
               <td><select id="cpu-2"></select></td>
               <td class="fixed">Штука</td>
-              <td class="hint">Выбрать в соответствии со спецификацией</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Количество ядер каждого установленного процессора</td>
               <td><select id="cpu-3"></select></td>
               <td class="fixed">Штука</td>
-              <td class="hint">Выбрать в соответствии со спецификацией</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Количество потоков каждого установленного процессора</td>
               <td><select id="cpu-4"></select></td>
               <td class="fixed"></td>
-              <td class="hint">Выбрать в соответствии со спецификацией (в КТРУ есть не все значения!!!)</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Базовая частота каждого установленного процессора (без учета технологии динамического изменения частоты)</td>
               <td><select id="cpu-5"></select></td>
               <td class="fixed">Гигагерц</td>
-              <td class="hint">Выбрать в соответствии со спецификацией (в КТРУ есть не все значения!!!)</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Объем кэш памяти третьего уровня (L3) каждого установленного процессора</td>
               <td><select id="cpu-6"></select></td>
               <td class="fixed">Мегабайт</td>
-              <td class="hint">Выбрать в соответствии со спецификацией (в КТРУ есть не все значения!!!)</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Аппаратная поддержка виртуализации</td>
@@ -115,7 +115,7 @@
               <td>Скорость передачи данных каждого установленного модуля оперативной памяти, МТ/с</td>
               <td><select id="memory-4"></select></td>
               <td class="fixed"></td>
-              <td class="hint">Почти всегда 5600, но в КТРУ есть значение только 5500</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Поддержка функции обнаружения и коррекции ошибок в оперативной памяти</td>
@@ -127,13 +127,13 @@
               <td>Объем каждого установленного модуля оперативной памяти</td>
               <td><select id="memory-6"></select></td>
               <td class="fixed">Гигабайт</td>
-              <td class="hint">Выбрать в соответствии со спецификацией</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Количество установленных модулей оперативной памяти</td>
               <td><select id="memory-7"></select></td>
               <td class="fixed">Штука</td>
-              <td class="hint">Выбрать в соответствии со спецификацией</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Интерфейс поддерживаемых накопителей</td>
@@ -152,55 +152,55 @@
               <td>Интерфейс подключения накопителей информации к дисковому контроллеру</td>
               <td><select id="select-16"></select></td>
               <td class="fixed"></td>
-              <td class="hint">Выбрать в соответствии со спецификацией. Если аппаратного RAID/HBA нет в спецификации, тогда оставляем только NVMe</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Количество LFF (3,5) слотов для накопителей на лицевой панели	</td>
               <td><select id="select-18"></select></td>
               <td class="fixed">Штука</td>
-              <td class="hint">Для шасси 12 x LFF иначе удаляем</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Количество SFF (2,5) слотов для накопителей на лицевой панели</td>
               <td><select id="select-19"></select></td>
               <td class="fixed"></td>
-              <td class="hint">Для шасси 24 x SFF иначе удаляем</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Количество SFF (2,5) слотов для накопителей на задней панели</td>
               <td><select id="select-20"></select></td>
               <td class="fixed">Штука</td>
-              <td class="hint">Выбрать в соответствии со спецификацией. Если нет комплектов доп. хранения, то удаляем. Если только комплект D, то 2, если A и D, то 4</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Максимальное количество устанавливаемых в корпус накопителей</td>
               <td><select id="select-21"></select></td>
               <td class="fixed">Штука</td>
-              <td class="hint">- 24 или 12 спереди - 0, 2 или 4 сзади - 2 USB 3.0 внутри на мат. плате - microSD в модуле управления </td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Наличие установленного аппаратного дискового контроллера</td>
               <td><select id="controller-1"></select></td>
               <td class="fixed"></td>
-              <td class="hint">Если есть RAID контроллер – Да, иначе – удаляем строку</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Объем кэш-памяти установленного дискового контроллера</td>
               <td><select id="controller-2"></select></td>
               <td class="fixed">Гигабайт</td>
-              <td class="hint">Если есть RAID контроллер – объем его КЭШ, иначе – удаляем строку</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Наличие защиты кэш-памяти дискового контроллера при потере питания сервером</td>
               <td><select id="controller-3"></select></td>
               <td class="fixed"></td>
-              <td class="hint">Если есть RAID контроллер с BBU –Да, иначе – удаляем строку</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Поддерживаемые дисковым контроллером типы RAID</td>
               <td><select id="controller-4"></select></td>
               <td class="fixed"></td>
-              <td class="hint">Если есть RAID контроллер, иначе – удаляем строку</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Возможность установки плат стандарта PCIe</td>
@@ -212,50 +212,50 @@
               <td>Количество слотов для установки плат расширения PCIe x16</td>
               <td><select id="select-27"></select></td>
               <td class="fixed">Штука</td>
-              <td class="hint">Считаем все слоты и свободные и занятые. 2 обычных слота в райзерах B и С (зависит от настройки бифуркации) и два OCP 3.0</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Количество слотов для установки плат расширения PCIe x8</td>
               <td><select id="select-28"></select></td>
               <td class="fixed">Штука</td>
-              <td class="hint">Считаем все слоты и свободные и занятые. 1 внутренний для RAID, 2 или 6 обычных слотов в райзерах B и C (зависит от бифуркации), по 1 опциональному слоту в райзерах A и D</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Количество свободных слотов для установки плат расширения PCIe x4</td>
               <td><select id="select-29"></select></td>
               <td class="fixed">Штука</td>
-              <td class="hint">Это стандартные PCIe слоты x8 и x16, которые не заняты, в эти слоты можно поставить карты x4. Слоты OCP и внутренний x8 не считаем по умолчанию, так как они не универсальные. Удалить, если свободных слотов нет</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Количество слотов для установки плат расширения OCP 3.0</td>
               <td><select id="select-30"></select></td>
               <td class="fixed">Штука</td>
-              <td class="hint">При 1-м процессоре доступен только 1 слот, если необходимо, то можно указать ≥ 1 штука</td>
+              <td class="hint"></td>
             </tr>
             <tbody id="hba-container">
             <tr>
               <td>Количество установленных HBA портов (тип 1)</td>
               <td><select id="hba-1"></select></td>
               <td class="fixed">Штука</td>
-              <td class="hint">Это порты SAS или FC HBA. Удалить, если HBA нет</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Скорость HBA порта (тип 1)</td>
               <td><select id="hba-2"></select></td>
               <td class="fixed">Гигабит в секунду</td>
-              <td class="hint">Это скорость портов SAS или FC HBA. Удалить, если HBA нет</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Тип среды передачи для HBA порта (тип 1)</td>
               <td><select id="hba-3"></select></td>
               <td class="fixed"></td>
-              <td class="hint">Это тип портов SAS или FC HBA. Удалить, если HBA нет</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Установленный адаптер HBA (тип1)</td>
               <td><select id="hba-4"></select></td>
               <td class="fixed"></td>
-              <td class="hint">Выбираем тип установленного HBA SAS или FC. Удалить, если HBA нет</td>
+              <td class="hint"></td>
             </tr>
             </tbody>
             <tbody id="drive-container">
@@ -263,37 +263,37 @@
               <td>Количество установленных накопителей (тип 1)</td>
               <td><select id="drive-1"></select></td>
               <td class="fixed">Штука</td>
-              <td class="hint">Выбрать ближайшее в соответствии со спецификацией (в КТРУ есть не все значения!!!) Накопители без горячей замены – PCI AIC NVMe, MicroSD (внутри BMC)</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Количество установленных накопителей (тип 1) с поддержкой горячей замены</td>
               <td><select id="drive-2"></select></td>
               <td class="fixed">Штука</td>
-              <td class="hint">Выбрать ближайшее в соответствии со спецификацией (в КТРУ есть не все значения!!!). Считаем все SATA/SAS/NVMe накопители в слотах 2.5"/3.5"/E1.S</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Интерфейс установленных накопителей (тип 1)</td>
               <td><select id="drive-3"></select></td>
               <td class="fixed"></td>
-              <td class="hint">Выбрать в соответствии со спецификацией</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Объем каждого установленного накопителя (тип 1)</td>
               <td><select id="drive-4"></select></td>
               <td class="fixed">Гигабайт</td>
-              <td class="hint">Выбрать в соответствии со спецификацией (некоторых значений нет!!!)</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Тип установленных накопителей (тип 1)</td>
               <td><select id="drive-5"></select></td>
               <td class="fixed"></td>
-              <td class="hint">Выбрать в соответствии со спецификацией</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Скорость вращения дисков в накопителе HDD или SSHD (тип 1)</td>
               <td><select id="drive-6"></select></td>
               <td class="fixed">Оборот в минуту</td>
-              <td class="hint">Выбрать в соответствии со спецификацией</td>
+              <td class="hint"></td>
             </tr>
             </tbody>
             <tbody id="network-container">
@@ -313,25 +313,25 @@
               <td>Поддержка функциональности RDMA (тип 1)</td>
               <td><select id="network-3"></select></td>
               <td class="fixed"></td>
-              <td class="hint">Выбрать в соответствии со спецификацией сетевой платы. если «Не требуется», то лучше удалить строку</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Скорость сетевого порта Ethernet (тип 1)</td>
               <td><select id="network-4"></select></td>
               <td class="fixed">Гигабит в секунду</td>
-              <td class="hint">Выбрать в соответствии со спецификацией</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Тип среды передачи для сетевого порта (тип 1)</td>
               <td><select id="network-5"></select></td>
               <td class="fixed"></td>
-              <td class="hint">Выбрать в соответствии со спецификацией. Медь-витая пара – это обычный медный порт или если установлены SFP+ модули BASE-T. Волоконно-оптический– когда установлен SFP трансивер. Медь-твинаксиал – когда порты SFP, но самих модулей не установлено – отверстие</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Скорость сетевого порта InfiniBand (Тип 1), Гбит/с</td>
               <td><select id="network-6"></select></td>
               <td class="fixed"></td>
-              <td class="hint">Выбрать в соответствии со спецификацией. удалить, если нет Infiniband портов</td>
+              <td class="hint"></td>
             </tr>
             </tbody>
             <tr>
@@ -368,13 +368,13 @@
               <td>Наличие устройства для укладки кабелей</td>
               <td><select id="select-52"></select></td>
               <td class="fixed"></td>
-              <td class="hint">Если есть CMA – пишем ДА, иначе – удаляем строку</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Защитная панель безопасности</td>
               <td><select id="select-53"></select></td>
               <td class="fixed"></td>
-              <td class="hint">В конфигураторе всегда есть</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Количество USB 2.0 портов</td>
@@ -410,13 +410,13 @@
               <td>Количество SFF-8654 8i портов</td>
               <td><select id="select-59"></select></td>
               <td class="fixed">Штука</td>
-              <td class="hint">1 шт на RAID контроллере SlimSAS 8i, 2 шт на RAID контроллере SlimSAS 16i, 3 шт на RAID контроллере SlimSAS 24i</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Количество SFF-8654 4i портов</td>
               <td><select id="select-60"></select></td>
               <td class="fixed">Штука</td>
-              <td class="hint">3 шт на дисковом бэкплейне 12xLFF или 6 шт на дисковом бэкплейне 24xSFF. Опционально по 1 шт на комплектах доп. хранения</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Тип электропитания</td>
@@ -506,7 +506,7 @@
               <td>Дискретный графический контроллер</td>
               <td><select id="gpu-1"></select></td>
               <td class="fixed"></td>
-              <td class="hint">Если есть GPU/Video –Да, иначе – удаляем строку</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Количество установленных дискретных графических контроллеров</td>
@@ -518,49 +518,49 @@
               <td>Максимально возможное количество плат ускорителей или сопроцессоров для установки</td>
               <td><select id="select-77"></select></td>
               <td class="fixed">Штука</td>
-              <td class="hint">При 1-м процессоре и отсутствии райзера D доступно только 4 слота. В этом случае ставим значение ≥ 4</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Максимальное количество дискретных графических контроллеров</td>
               <td><select id="select-78"></select></td>
               <td class="fixed">Штука</td>
-              <td class="hint">При 1-м процессоре и отсутствии райзера D - ставим значение ≥ 2</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Объем видеопамяти каждого установленного дискретного графического контроллера</td>
               <td><select id="gpu-3"></select></td>
               <td class="fixed">Гигабайт</td>
-              <td class="hint">Если есть GPU – объем его памяти, иначе – удаляем строку</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Объем собственной памяти ускорителя</td>
               <td><select id="gpu-4"></select></td>
               <td class="fixed">Гигабайт</td>
-              <td class="hint">Если есть GPU – объем его памяти, иначе – удаляем строку</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Поддержка установленным дискретным графическим контроллером версий интерфейсов подключения PCI-E</td>
               <td><select id="gpu-5"></select></td>
               <td class="fixed"></td>
-              <td class="hint">Выбрать в соответствии со спецификацией</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Тип видеопамяти каждого установленного дискретного графического контроллера</td>
               <td><select id="gpu-6"></select></td>
               <td class="fixed"></td>
-              <td class="hint">Выбрать в соответствии со спецификацией</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Разрядность шины каждого установленного дискретного графического контроллера</td>
               <td><select id="gpu-7"></select></td>
               <td class="fixed">Бит</td>
-              <td class="hint">Выбрать в соответствии со спецификацией</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Базовая частота каждого установленного дискретного графического контроллера</td>
               <td><select id="gpu-8"></select></td>
               <td class="fixed">Гигагерц</td>
-              <td class="hint">Выбрать в соответствии со спецификацией</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Требования к функциям графического контроллера</td>
@@ -572,19 +572,19 @@
               <td>Наличие предустановленной операционной системы</td>
               <td><select id="select-86"></select></td>
               <td class="fixed"></td>
-              <td class="hint">На заводе не ставим и не продаем, только если партнер сделает. Можно удалить, если не актуально</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Наличие средств доверенной загрузки, сертифицированных ФСБ</td>
               <td><select id="select-87"></select></td>
               <td class="fixed"></td>
-              <td class="hint">На заводе не ставим и не продаем, только если партнер сделает. Можно удалить, если не актуально</td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Наличие средств доверенной загрузки, сертифицированных ФСТЭК</td>
               <td><select id="select-88"></select></td>
               <td class="fixed"></td>
-              <td class="hint">На заводе не ставим и не продаем, только если партнер сделает. Можно удалить, если не актуально</td>
+              <td class="hint"></td>
             </tr>
           </tbody>
         </table>

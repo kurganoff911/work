@@ -51,6 +51,9 @@ function applyPreset(presetName) {
           // Проверка и подсветка строк
           checkRows();
 
+          // Применяем подсказки из пресета
+          applyHints(presetOptions.hints || {});
+
           // Инициализация: запускаем обработчики для "Удалить"
           initDeleteHandlers();
 
@@ -179,6 +182,27 @@ function updateSelects(options) {
     if (select) {
       populateSelect(select, options[selectId]);
       select.disabled = options[selectId].length <= 1;
+    }
+  }
+}
+
+/**
+ * Применить подсказки из пресета к ячейкам .hint
+ * @param {Object} hints - объект { selectId: hintText }
+ */
+function applyHints(hints) {
+  if (!hints || Object.keys(hints).length === 0) return;
+
+  for (const selectId in hints) {
+    const select = getElement(selectId);
+    if (!select) continue;
+
+    const row = select.closest('tr');
+    if (!row) continue;
+
+    const hintCell = row.querySelector('.hint');
+    if (hintCell) {
+      hintCell.textContent = hints[selectId];
     }
   }
 }
