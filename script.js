@@ -30,6 +30,73 @@ function toggleSelect(el, shouldDisable) {
   }
 }
 
+// Клонирование HBA-строк
+function cloneHba() {
+  const count = parseInt(document.getElementById('hbaCount').value) || 0;
+  if (count < 0) return;
+  
+  const container = document.getElementById('hba-container');
+  if (!container) return;
+  
+  // Удаляем все клонированные строки (кроме базовых)
+  const existingClones = container.querySelectorAll('tr.clone');
+  existingClones.forEach(row => row.remove());
+  
+  // Если 0, скрываем контейнер
+  if (count === 0) {
+    container.style.display = 'none';
+    checkRows();
+    return;
+  }
+  
+  container.style.display = '';
+  
+  // Если только 1 тип, ничего не клонируем
+  if (count === 1) {
+    checkRows();
+    return;
+  }
+  
+  // Запрашиваем базовые строки ПОСЛЕ удаления клонов
+  const baseRows = container.querySelectorAll('tr');
+  
+  // Клонируем строки для каждого дополнительного типа
+  for (let type = 2; type <= count; type++) {
+    baseRows.forEach((baseRow, index) => {
+      const clone = baseRow.cloneNode(true);
+      clone.classList.add('clone');
+      
+      // Обновляем id селектов
+      const select = clone.querySelector('select');
+      if (select) {
+        select.id = `hba-${index + 1}-${type}`;
+        // Заполняем селекты данными из presets
+        const options = driveOptions[`hba-${index + 1}`];
+        if (options) {
+          select.innerHTML = '';
+          options.forEach(optText => {
+            const option = document.createElement('option');
+            option.textContent = optText;
+            select.appendChild(option);
+          });
+        }
+      }
+      
+      // Заменяем "(тип 1)" на "(тип 2)" и т.д.
+      const cells = clone.querySelectorAll('td');
+      cells.forEach(cell => {
+        cell.innerHTML = cell.innerHTML.replace(/\(тип \d+\)/g, `(тип ${type})`);
+        cell.innerHTML = cell.innerHTML.replace(/Тип \d+/g, `Тип ${type}`);
+      });
+      
+      container.appendChild(clone);
+    });
+  }
+  
+  // Скрываем строки с пустыми селекторами
+  checkRows();
+}
+
 // Клонирование drive-строк
 function cloneDrives() {
   const count = parseInt(document.getElementById('driveCount').value) || 1;
@@ -258,6 +325,14 @@ function checkRows() {
     driveContainer.style.display = driveCount === 0 ? 'none' : '';
   }
   
+  const hbaCount = parseInt(document.getElementById('hbaCount').value) || 0;
+  const hbaContainer = document.getElementById('hba-container');
+  
+  // Скрываем/показываем весь контейнер hba-строк
+  if (hbaContainer) {
+    hbaContainer.style.display = hbaCount === 0 ? 'none' : '';
+  }
+  
   const table = document.getElementById('dataTable');
   const rows = table.querySelectorAll('tbody tr');
   
@@ -348,6 +423,9 @@ function collectTableData() {
   const driveCount = parseInt(document.getElementById('driveCount').value) || 0;
   const excludeDrives = driveCount === 0;
 
+  const hbaCount = parseInt(document.getElementById('hbaCount').value) || 0;
+  const excludeHbaRows = hbaCount === 0;
+
     // drive-3-N и drive-5-N для проверки типов
     const drive3Rows = allRows.filter(r => r.selectId && /^drive-3/.test(r.selectId));
     const drive3Values = {};
@@ -372,6 +450,7 @@ function collectTableData() {
     allRows.forEach(item => {
       if (item.selectedValue.includes('Удалить')) return;
       if (excludeDrives && item.selectId && item.selectId.startsWith('drive-')) return;
+      if (excludeHbaRows && item.selectId && item.selectId.startsWith('hba-')) return;
       if (excludeGpu && gpuKeysToExclude.includes(item.selectId)) return;
       if (excludeController && controllerKeysToExclude.includes(item.selectId)) return;
       if (excludeController2 && item.selectId === 'controller-2') return;
@@ -421,6 +500,9 @@ document.addEventListener('DOMContentLoaded', function () {
   document.getElementById('networkCount').addEventListener('input', cloneNetworks);
   document.getElementById('applyNetworkBtn').addEventListener('click', cloneNetworks);
 
+  document.getElementById('hbaCount').addEventListener('input', cloneHba);
+  document.getElementById('applyHbaBtn').addEventListener('click', cloneHba);
+
   // Контроллер: если controller-1 = "Удалить", блокируем controller-2,3,4 и select-59
   document.getElementById('controller-1').addEventListener('change', function () {
     const controllerKeys = ['controller-2', 'controller-3', 'controller-4', 'select-59'];
@@ -458,6 +540,29 @@ document.addEventListener('DOMContentLoaded', function () {
   document.getElementById('drive-3').addEventListener('change', updateDrive5);
   document.getElementById('drive-5').addEventListener('change', updateDrive6);
   document.getElementById('network-2').addEventListener('change', updateNetwork6);
+
+  // Делегирование событий для клонированных HBA-N-TYPE
+  const hbaContainer = document.getElementById('hba-container');
+  if (hbaContainer) {
+    hbaContainer.addEventListener('change', function (e) {
+      const select = e.target;
+      const match = select.id.match(/^hba-(\d+)-(\d+)$/);
+      if (match) {
+        const index = parseInt(match[1]);
+        const type = parseInt(match[2]);
+        
+        // hba-1-N → блокируем hba-2-N, hba-3-N, hba-4-N
+        if (index === 1) {
+          const shouldDisable = select.selectedOptions[0].text.includes('Удалить');
+          for (let i = 2; i <= 4; i++) {
+            toggleSelect(document.getElementById(`hba-${i}-${type}`), shouldDisable);
+          }
+        }
+        
+        checkRows();
+      }
+    });
+  }
 
   // Делегирование событий для клонированных drive-N-TYPE
   const driveContainer = document.getElementById('drive-container');
@@ -765,6 +870,12 @@ function applyPreset(presetName) {
             updateNetwork6AfterClone(1);
           }
           
+          // Инициализация HBA
+          const hbaCount = parseInt(document.getElementById('hbaCount').value) || 0;
+          if (hbaCount > 0) {
+            cloneHba();
+          }
+          
           // Проверка и подсветка строк
           checkRows();
           
@@ -773,6 +884,15 @@ function applyPreset(presetName) {
             const el = document.getElementById(id);
             if (el) el.dispatchEvent(new Event('change'));
           });
+          
+          // Инициализация: запускаем обработчики для клонов HBA
+          const hbaCountVal = parseInt(document.getElementById('hbaCount').value) || 0;
+          if (hbaCountVal > 1) {
+            for (let type = 2; type <= hbaCountVal; type++) {
+              const hba1Clone = document.getElementById(`hba-1-${type}`);
+              if (hba1Clone) hba1Clone.dispatchEvent(new Event('change'));
+            }
+          }
           
           currentPreset = presetName;
           localStorage.setItem('currentPreset', presetName);
