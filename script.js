@@ -607,7 +607,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Экспорт в Word
   document.getElementById('exportWordBtn').addEventListener('click', function () {
-    const { Document, Packer, Table, TableRow, TableCell, WidthType, AlignmentType, BorderStyle, Paragraph, TextRun } = docx;
+    const docxLib = typeof window.docx !== 'undefined' ? window.docx : null;
+    if (!docxLib) {
+      alert('Библиотека docx не загружена. Проверьте подключение к интернету.');
+      return;
+    }
+    const { Document, Packer, Table, TableRow, TableCell, WidthType, AlignmentType, BorderStyle, Paragraph, TextRun } = docxLib;
 
     const data = collectTableData();
 
