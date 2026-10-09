@@ -100,3 +100,20 @@ p {
 #network-container {
   display: table-row-group;
 }
+
+.head_container {
+  margin-top: 40px;
+  margin-bottom: 70px;
+}
+
+.inputs_box {
+  display: flex;
+  justify-content: space-evenly;
+  padding: 15px;
+  border: solid #D3D3D3 1px;
+  border-radius: 15px;
+}
+
+.input_btn {
+  padding: 7px;
+}
