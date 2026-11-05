@@ -29,8 +29,6 @@ const CONFIG = {
     DRIVE_CONTAINER: 'drive-container',
     NETWORK_COUNT: 'networkCount',
     NETWORK_CONTAINER: 'network-container',
-    HBA_COUNT: 'hbaCount',
-    HBA_CONTAINER: 'hba-container',
     DATA_TABLE: 'dataTable',
     NOTE_SELECTOR: 'noteSelector',
     EXPORT_BTN: 'exportBtn',

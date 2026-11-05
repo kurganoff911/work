@@ -28,7 +28,7 @@ function getSelectedText(select) {
 }
 
 /**
- * Извлечь номер типа из ID элемента (hba-1-2 -> 2, drive-3 -> 1)
+ * Извлечь номер типа из ID элемента (drive-1-2 -> 2, drive-3 -> 1)
  * @param {string} id - ID элемента
  * @returns {number} номер типа
  */

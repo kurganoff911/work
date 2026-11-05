@@ -1,63 +1,6 @@
 // Логика клонирования строк
 
 /**
- * Клонирование HBA-строк
- */
-function cloneHba() {
-  const count = getNumberValue(CONFIG.ELEMENTS.HBA_COUNT);
-  const container = getElement(CONFIG.ELEMENTS.HBA_CONTAINER);
-  if (!container) return;
-
-  removeClones(container);
-
-  // Если 0, скрываем контейнер
-  if (count === 0) {
-    container.style.display = 'none';
-    checkRows();
-    return;
-  }
-
-  container.style.display = '';
-
-  // Если только 1 тип, ничего не клонируем
-  if (count === 1) {
-    checkRows();
-    return;
-  }
-
-  const baseRows = getBaseRows(container);
-
-  // Клонируем строки для каждого дополнительного типа
-  for (let type = 2; type <= count; type++) {
-    baseRows.forEach((baseRow, index) => {
-      const clone = baseRow.cloneNode(true);
-      clone.classList.add('clone');
-
-      // Обновляем id селектов
-      const select = clone.querySelector('select');
-      if (select) {
-        select.id = `hba-${index + 1}-${type}`;
-        const options = driveOptions[`hba-${index + 1}`];
-        if (options) {
-          populateSelect(select, options);
-          applySingleLongOption(select);
-        }
-      }
-
-      // Заменяем "(тип 1)" на "(тип 2)" и т.д.
-      const cells = clone.querySelectorAll('td');
-      cells.forEach(cell => {
-        cell.innerHTML = replaceTypeInText(cell.innerHTML, type);
-      });
-
-      container.appendChild(clone);
-    });
-  }
-
-  checkRows();
-}
-
-/**
  * Клонирование drive-строк
  */
 function cloneDrives() {

@@ -134,29 +134,6 @@ function handleController3Delete() {
 }
 
 /**
- * Обработчик для клонированных HBA-N-TYPE
- * @param {Event} e - событие change
- */
-function handleHbaCloneChange(e) {
-  const select = e.target;
-  const match = select.id.match(/^hba-(\d+)-(\d+)$/);
-  if (!match) return;
-
-  const index = parseInt(match[1]);
-  const type = parseInt(match[2]);
-
-  // hba-1-N → блокируем hba-2-N, hba-3-N, hba-4-N
-  if (index === 1) {
-    const shouldDisable = getSelectedText(select).includes('Удалить');
-    for (let i = 2; i <= 4; i++) {
-      toggleSelect(getElement(`hba-${i}-${type}`), shouldDisable);
-    }
-  }
-
-  checkRows();
-}
-
-/**
  * Обработчик для клонированных drive-N-TYPE
  * @param {Event} e - событие change
  */

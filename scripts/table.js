@@ -15,13 +15,6 @@ function checkRows() {
     driveContainer.style.display = driveCount === 0 ? 'none' : '';
   }
 
-  // Скрываем/показываем контейнер hba-строк
-  const hbaCount = getNumberValue(CONFIG.ELEMENTS.HBA_COUNT);
-  const hbaContainer = getElement(CONFIG.ELEMENTS.HBA_CONTAINER);
-  if (hbaContainer) {
-    hbaContainer.style.display = hbaCount === 0 ? 'none' : '';
-  }
-
   const table = getElement(CONFIG.ELEMENTS.DATA_TABLE);
   if (!table) return;
 
@@ -175,8 +168,7 @@ function calculateExclusions(allRows) {
     controller: calculateExcludeRule(allRows, CONFIG.EXCLUSION_RULES.CONTROLLER),
     controller3: calculateExcludeRule(allRows, CONFIG.EXCLUSION_RULES.CONTROLLER_3),
     hba: calculateExcludeRule(allRows, CONFIG.EXCLUSION_RULES.HBA),
-    drives: getNumberValue(CONFIG.ELEMENTS.DRIVE_COUNT) === 0,
-    hbaRows: getNumberValue(CONFIG.ELEMENTS.HBA_COUNT) === 0
+    drives: getNumberValue(CONFIG.ELEMENTS.DRIVE_COUNT) === 0
   };
 }
 
@@ -237,9 +229,6 @@ function filterRows(allRows, exclusions, driveValues) {
 
     // Исключаем drive-строки если driveCount = 0
     if (exclusions.drives && item.selectId && item.selectId.startsWith('drive-')) return;
-
-    // Исключаем hba-строки если hbaCount = 0
-    if (exclusions.hbaRows && item.selectId && item.selectId.startsWith('hba-')) return;
 
     // Исключаем по правилам "Удалить"
     if (exclusions.gpu.trigger && exclusions.gpu.exclude.includes(item.selectId)) return;

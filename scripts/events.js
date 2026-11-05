@@ -28,12 +28,6 @@ function initEvents() {
   getElement('applyNetworkBtn')
     .addEventListener('click', cloneNetworks);
 
-  // Клонирование HBA-строк
-  getElement(CONFIG.ELEMENTS.HBA_COUNT)
-    .addEventListener('input', cloneHba);
-  getElement('applyHbaBtn')
-    .addEventListener('click', cloneHba);
-
   // Обработчики "Удалить"
   initDeleteEventListeners();
 
@@ -86,12 +80,6 @@ function initBaseEventListeners() {
  * Инициализация делегирования событий для клонов
  */
 function initCloneEventDelegation() {
-  // Делегирование для HBA-N-TYPE
-  const hbaContainer = getElement(CONFIG.ELEMENTS.HBA_CONTAINER);
-  if (hbaContainer) {
-    hbaContainer.addEventListener('change', handleHbaCloneChange);
-  }
-
   // Делегирование для drive-N-TYPE
   const driveContainer = getElement(CONFIG.ELEMENTS.DRIVE_CONTAINER);
   if (driveContainer) {

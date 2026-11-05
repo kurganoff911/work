@@ -45,9 +45,6 @@ function applyPreset(presetName) {
           // Применяем network-опции
           applyNetworkOptions(commonOptions);
 
-          // Инициализация HBA
-          initHba();
-
           // Проверка и подсветка строк
           checkRows();
 
@@ -55,10 +52,10 @@ function applyPreset(presetName) {
           applyHints(presetOptions.hints || {});
 
           // Инициализация: запускаем обработчики для "Удалить"
-          initDeleteHandlers();
-
-          // Инициализация: запускаем обработчики для клонов HBA
-          initHbaClones();
+          ['gpu-1', 'controller-1', 'hba-1', 'controller-3'].forEach(id => {
+            const el = getElement(id);
+            if (el) el.dispatchEvent(new Event('change'));
+          });
 
           currentPreset = presetName;
           setStorageValue('currentPreset', presetName);
@@ -128,16 +125,6 @@ function applyNetworkOptions(options) {
 }
 
 /**
- * Инициализация HBA
- */
-function initHba() {
-  const hbaCount = getNumberValue(CONFIG.ELEMENTS.HBA_COUNT);
-  if (hbaCount > 0) {
-    cloneHba();
-  }
-}
-
-/**
  * Инициализация: запускаем обработчики для "Удалить"
  */
 function initDeleteHandlers() {
@@ -145,19 +132,6 @@ function initDeleteHandlers() {
     const el = getElement(id);
     if (el) el.dispatchEvent(new Event('change'));
   });
-}
-
-/**
- * Инициализация: запускаем обработчики для клонов HBA
- */
-function initHbaClones() {
-  const hbaCountVal = getNumberValue(CONFIG.ELEMENTS.HBA_COUNT);
-  if (hbaCountVal > 1) {
-    for (let type = 2; type <= hbaCountVal; type++) {
-      const hba1Clone = getElement(`hba-1-${type}`);
-      if (hba1Clone) hba1Clone.dispatchEvent(new Event('change'));
-    }
-  }
 }
 
 /**
