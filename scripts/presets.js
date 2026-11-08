@@ -52,10 +52,12 @@ function applyPreset(presetName) {
           applyHints(presetOptions.hints || {});
 
           // Инициализация: запускаем обработчики для "Удалить"
-          ['gpu-1', 'controller-1', 'hba-1', 'controller-3'].forEach(id => {
+          ['gpu-1', 'hba-1', 'controller-3'].forEach(id => {
             const el = getElement(id);
             if (el) el.dispatchEvent(new Event('change'));
           });
+          // controller-1 обрабатывается отдельно
+          handleController1Delete();
 
           currentPreset = presetName;
           setStorageValue('currentPreset', presetName);
@@ -128,7 +130,7 @@ function applyNetworkOptions(options) {
  * Инициализация: запускаем обработчики для "Удалить"
  */
 function initDeleteHandlers() {
-  ['gpu-1', 'controller-1', 'hba-1', 'controller-3'].forEach(id => {
+  ['gpu-1', 'hba-1', 'controller-3'].forEach(id => {
     const el = getElement(id);
     if (el) el.dispatchEvent(new Event('change'));
   });
@@ -149,7 +151,7 @@ function loadNotes() {
 }
 
 /**
- * Заполнить все селекті опциями
+ * Заполнить все селекты опциями
  * @param {Object} options - объект { selectId: [options] }
  */
 function updateSelects(options) {
@@ -157,8 +159,11 @@ function updateSelects(options) {
     const select = getElement(selectId);
     if (select) {
       populateSelect(select, options[selectId]);
+      // controller-4 управляется через controller-1, не блокируем здесь
+      if (selectId !== 'controller-4') {
+        select.disabled = options[selectId].length <= 1;
+      }
       applySingleLongOption(select);
-      select.disabled = options[selectId].length <= 1;
     }
   }
 }

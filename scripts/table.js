@@ -49,6 +49,19 @@ function checkRows() {
       return;
     }
 
+    // controller-4: скрываем если controller-1 = "Удалить"
+    if (select.id === 'controller-4') {
+      const controller1 = getElement('controller-1');
+      if (controller1) {
+        const c1Text = getSelectedText(controller1);
+        if (c1Text && c1Text.includes('Удалить')) {
+          row.style.display = 'none';
+          row.style.removeProperty('background-color');
+          return;
+        }
+      }
+    }
+
     // Проверка значения селекта
     applyRowStyle(row, select);
   });
@@ -237,6 +250,12 @@ function filterRows(allRows, exclusions, driveValues) {
     if (exclusions.controller.trigger && exclusions.controller.exclude.includes(item.selectId)) return;
     if (exclusions.controller3.trigger && exclusions.controller3.exclude.includes(item.selectId)) return;
     if (exclusions.hba.trigger && exclusions.hba.exclude.includes(item.selectId)) return;
+
+    // controller-4: исключаем если controller-1 = "Удалить"
+    if (item.selectId === 'controller-4') {
+      const controller1 = getElement('controller-1');
+      if (controller1 && getSelectedText(controller1).includes('Удалить')) return;
+    }
 
     // drive-5-N: исключаем если drive-3 не SATA/SAS
     if (/^drive-5/.test(item.selectId)) {

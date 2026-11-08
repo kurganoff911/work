@@ -123,6 +123,36 @@ function handleDeleteRule(triggerId, excludeKeys) {
   excludeKeys.forEach(key => {
     toggleSelect(getElement(key), shouldDisable);
   });
+  checkRows();
+}
+
+/**
+ * Обработчик controller-1: скрывает controller-4 если "Удалить", иначе блокирует
+ */
+function handleController1Delete() {
+  const controller1 = getElement('controller-1');
+  if (!controller1) return;
+
+  const isDelete = getSelectedText(controller1).includes('Удалить');
+  const controller4 = getElement('controller-4');
+  if (!controller4) return;
+
+  if (isDelete) {
+    // controller-1 = "Удалить" → скрываем controller-4
+    const row = controller4.closest('tr');
+    if (row) {
+      row.style.display = 'none';
+      row.style.removeProperty('background-color');
+    }
+  } else {
+    // controller-1 ≠ "Удалить" → блокируем controller-4 (зелёный)
+    toggleSelect(controller4, true);
+    const row = controller4.closest('tr');
+    if (row) {
+      row.style.display = '';
+      row.style.backgroundColor = CONFIG.STYLES.DISABLED_ROW;
+    }
+  }
 }
 
 /**

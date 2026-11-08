@@ -48,13 +48,20 @@ function initEvents() {
  * Инициализация обработчиков "Удалить"
  */
 function initDeleteEventListeners() {
-  // Контроллер: если controller-1 = "Удалить", блокируем controller-2,3,4 и select-59
-  getElement('controller-1').addEventListener('change', function () {
-    handleDeleteRule('controller-1', ['controller-2', 'controller-3', 'controller-4', 'select-59']);
-  });
+  // Контроллер: если controller-1 = "Удалить", скрываем controller-4
+  getElement('controller-1').addEventListener('change', handleController1Delete);
 
   // Контроллер-3: если "Удалить", очищаем controller-2
   getElement('controller-3').addEventListener('change', handleController3Delete);
+
+  // Блокировка controller-2,3 и select-59 при controller-1 = "Удалить"
+  getElement('controller-1').addEventListener('change', function () {
+    const isDelete = getSelectedText(getElement('controller-1')).includes('Удалить');
+    toggleSelect(getElement('controller-2'), isDelete);
+    toggleSelect(getElement('controller-3'), isDelete);
+    toggleSelect(getElement('select-59'), isDelete);
+    checkRows();
+  });
 
   // GPU: если gpu-1 = "Удалить", блокируем gpu-2...gpu-8
   getElement('gpu-1').addEventListener('change', function () {
