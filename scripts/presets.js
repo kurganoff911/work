@@ -1,7 +1,7 @@
 // Загрузка и применение пресетов
 
 // Текущий пресет
-let currentPreset = getStorageValue('currentPreset', 'standart');
+let currentPreset = getStorageValue('currentPreset', 'R220G3');
 
 // Опции для drive и network
 let driveOptions = {};

@@ -31,13 +31,18 @@ function checkRows() {
       return;
     }
 
-    // Скрываем drive-6-N при drive-3-N не SATA/SAS ИЛИ drive-5-N не HDD
+    // drive-6: если не disabled и drive-5 = HDD → показываем
     if (/^drive-6/.test(select.id)) {
-      hideDrive6Row(row, select.id);
+      if (!select.disabled) {
+        row.style.display = '';
+        row.style.removeProperty('background-color');
+      } else {
+        hideDrive6Row(row, select.id);
+      }
       return;
     }
 
-    // Скрываем network-6-N при блокировке (Ethernet)
+    // network-6: скрываем при блокировке (Ethernet)
     if (/^network-6/.test(select.id) && select.disabled) {
       row.style.display = 'none';
       row.style.removeProperty('background-color');
@@ -50,30 +55,27 @@ function checkRows() {
 }
 
 /**
- * Скрыть строку drive-6-N если условия не выполнены
+ * Скрыть строку drive-6-N если drive-5 не HDD
  * @param {HTMLTableRowElement} row - строка таблицы
  * @param {string} selectId - ID селекта
  */
 function hideDrive6Row(row, selectId) {
   const type = extractType(selectId);
 
-  // Для базового drive-6 (type=1) проверяем drive-3, для клонов — drive-3-N
-  const drive3Id = type === 1 ? 'drive-3' : `drive-3-${type}`;
   const drive5Id = type === 1 ? 'drive-5' : `drive-5-${type}`;
-  const drive3Clone = getElement(drive3Id);
   const drive5Clone = getElement(drive5Id);
 
-  if (drive3Clone && drive5Clone) {
-    const drive3Text = getSelectedText(drive3Clone);
-    const drive5Text = getSelectedText(drive5Clone);
-    const isSataOrSas = drive3Text === 'SATA' || drive3Text === 'SAS';
-    const isHdd = drive5Text === 'HDD';
+  const drive5Text = drive5Clone ? getSelectedText(drive5Clone) : '';
+  const isHdd = drive5Text === 'HDD';
 
-    if (!isSataOrSas || !isHdd) {
-      row.style.display = 'none';
-      row.style.removeProperty('background-color');
-      return;
-    }
+  if (isHdd) {
+    // drive-5 = HDD → показываем drive-6
+    row.style.display = '';
+    row.style.removeProperty('background-color');
+  } else {
+    // drive-5 ≠ HDD → скрываем drive-6
+    row.style.display = 'none';
+    row.style.removeProperty('background-color');
   }
 }
 
@@ -243,11 +245,9 @@ function filterRows(allRows, exclusions, driveValues) {
       if (drive3Value !== 'SATA' && drive3Value !== 'SAS') return;
     }
 
-    // drive-6-N: исключаем если drive-3 не SATA/SAS ИЛИ drive-5 не HDD
+    // drive-6-N: исключаем если drive-5 не HDD
     if (/^drive-6/.test(item.selectId)) {
       const type = extractType(item.selectId);
-      const drive3Value = driveValues.drive3Values[type] ? driveValues.drive3Values[type][3] : '';
-      if (drive3Value !== 'SATA' && drive3Value !== 'SAS') return;
       const drive5Value = driveValues.drive5Values[type] ? driveValues.drive5Values[type][5] : '';
       if (drive5Value !== 'HDD') return;
     }

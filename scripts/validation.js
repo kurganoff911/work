@@ -18,6 +18,9 @@ function updateDrive5() {
   const drive5 = getElement('drive-5');
   if (drive5 && !isSataOrSas) {
     drive5.value = drive5.options.length > 0 ? drive5.options[0].value : '';
+    // Явно вызываем updateDrive6, т.к. change не сработает
+    updateDrive6();
+    return;
   }
 
   // drive-6 блокируется, если drive-3 не SATA/SAS ИЛИ drive-5 не HDD
@@ -42,14 +45,14 @@ function updateDrive6() {
   const selectedText = getSelectedText(drive5);
   const isHdd = selectedText === 'HDD';
 
-  // drive-6 блокируется, если drive-3 не SATA/SAS ИЛИ drive-5 не HDD
-  const drive3 = getElement('drive-3');
   const drive6 = getElement('drive-6');
-  if (drive6 && drive3) {
-    const drive3Text = getSelectedText(drive3);
-    const isSataOrSas = drive3Text === 'SATA' || drive3Text === 'SAS';
-    const shouldDisable = !isSataOrSas || !isHdd;
-    toggleSelect(drive6, shouldDisable);
+  if (drive6) {
+    drive6.disabled = !isHdd;
+    if (!isHdd) {
+      drive6.value = '';
+    } else {
+      drive6.value = drive6.options[0] ? drive6.options[0].value : '';
+    }
   }
 
   checkRows();
@@ -145,33 +148,24 @@ function handleDriveCloneChange(e) {
   const index = parseInt(match[1]);
   const type = parseInt(match[2]);
 
-  // drive-3-N → drive-5-N и drive-6-N
+  // drive-3-N → drive-5-N
   if (index === 3) {
     const drive5Clone = getElement(`drive-5-${type}`);
-    const drive6Clone = getElement(`drive-6-${type}`);
     const isSataOrSas = getSelectedText(select) === 'SATA' || getSelectedText(select) === 'SAS';
 
     if (drive5Clone && !isSataOrSas) {
       drive5Clone.value = drive5Clone.options[0] ? drive5Clone.options[0].value : '';
     }
 
-    if (drive6Clone && drive5Clone) {
-      const drive5Text = getSelectedText(drive5Clone);
-      const isHdd = drive5Text === 'HDD';
-      toggleSelect(drive6Clone, !isSataOrSas || !isHdd);
-    }
     checkRows();
   }
 
   // drive-5-N → drive-6-N
   if (index === 5) {
     const drive6Clone = getElement(`drive-6-${type}`);
-    const drive3Clone = getElement(`drive-3-${type}`);
-    if (drive6Clone && drive3Clone) {
+    if (drive6Clone) {
       const isHdd = getSelectedText(select) === 'HDD';
-      const drive3Text = getSelectedText(drive3Clone);
-      const isSataOrSas = drive3Text === 'SATA' || drive3Text === 'SAS';
-      toggleSelect(drive6Clone, !isSataOrSas || !isHdd);
+      toggleSelect(drive6Clone, !isHdd);
       checkRows();
     }
   }

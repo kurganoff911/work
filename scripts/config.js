@@ -6,9 +6,9 @@ const CONFIG = {
 
   // Пресеты
   PRESET_FILES: {
-    'standart': 'standart.json',
-    'urgent': 'urgent.json',
-    'custom': 'custom.json'
+    'R220G3': 'R220G3.json',
+    '4208': '4208.json',
+    'R220G2': 'R220G2.json'
   },
 
   // Общие файлы для всех пресетов
