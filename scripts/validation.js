@@ -145,14 +145,17 @@ function handleController1Delete() {
       row.style.removeProperty('background-color');
     }
   } else {
-    // controller-1 ≠ "Удалить" → блокируем controller-4 (зелёный)
-    toggleSelect(controller4, true);
+    // controller-1 ≠ "Удалить" → блокируем controller-4 (зелёный), но сохраняем значение
+    const controller4 = getElement('controller-4');
+    controller4.disabled = true;
     const row = controller4.closest('tr');
     if (row) {
       row.style.display = '';
       row.style.backgroundColor = CONFIG.STYLES.DISABLED_ROW;
     }
   }
+
+  checkRows();
 }
 
 /**

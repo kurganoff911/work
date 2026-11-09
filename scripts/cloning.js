@@ -139,6 +139,9 @@ function populateSelect(select, options) {
 function applySingleLongOption(select) {
   if (!select || !select.options || select.options.length !== 1) return;
 
+  // controller-4 управляется через controller-1, не заменяем на span
+  if (select.id === 'controller-4') return;
+
   const TEXT_THRESHOLD = 30;
   const text = select.options[0].text;
 

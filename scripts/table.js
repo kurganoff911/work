@@ -60,6 +60,10 @@ function checkRows() {
           return;
         }
       }
+      // controller-4 ≠ "Удалить" → показываем и подсвечиваем зелёным
+      row.style.display = '';
+      row.style.backgroundColor = CONFIG.STYLES.DISABLED_ROW;
+      return;
     }
 
     // Проверка значения селекта
