@@ -51,6 +51,12 @@ function applyPreset(presetName) {
           // Применяем подсказки из пресета
           applyHints(presetOptions.hints || {});
 
+          // Применяем правила пресета
+          applyPresetRules(presetOptions.rules || {});
+
+          // Настраиваем слушатели для динамического применения правил
+          setupRuleListeners(presetOptions.rules || {});
+
           // Инициализация: запускаем обработчики для "Удалить"
           ['gpu-1', 'hba-1', 'controller-3'].forEach(id => {
             const el = getElement(id);
@@ -72,31 +78,152 @@ function applyPreset(presetName) {
 }
 
 /**
- * Применить drive-опции ко всем drive-селектам
- * @param {Object} options - опции
+ * Применить правила, специфичные для пресета
+ * @param {Object} rules - объект правил { ruleName: { trigger, target, action } }
  */
-function applyDriveOptions(options) {
-  driveOptions = options;
+function applyPresetRules(rules) {
+  for (const ruleName in rules) {
+    const rule = rules[ruleName];
+    const triggerEl = getElement(rule.trigger);
+    if (!triggerEl) continue;
 
-  const driveSelects = document.querySelectorAll('[id^="drive-"]');
-  driveSelects.forEach(select => {
+    const selectedText = getSelectedText(triggerEl);
+
+    // Проверка условия
+    let conditionMet = false;
+    if (rule.condition) {
+      conditionMet = selectedText === rule.condition;
+    } else {
+      conditionMet = selectedText.includes(rule.conditionText || 'Удалить');
+    }
+
+    if (!conditionMet) continue;
+
+    // Применение действия
+    applyRuleAction(rule);
+  }
+
+  checkRows();
+}
+
+/**
+ * Применить действие правила
+ * @param {Object} rule - правило
+ */
+function applyRuleAction(rule) {
+  const targetEl = getElement(rule.target);
+  if (!targetEl) return;
+
+  if (rule.action === 'hide') {
+    const row = targetEl.closest('tr');
+    if (row) {
+      row.style.display = 'none';
+      row.style.removeProperty('background-color');
+    }
+  } else if (rule.action === 'disable') {
+    targetEl.disabled = true;
+    targetEl.value = '';
+  } else if (rule.action === 'clear') {
+    targetEl.value = '';
+  } else if (rule.action === 'setValue') {
+    // Ищем опцию по точному или частичному совпадению
+    let matched = false;
+    for (let i = 0; i < targetEl.options.length; i++) {
+      if (targetEl.options[i].text === rule.value) {
+        targetEl.value = targetEl.options[i].value;
+        matched = true;
+        break;
+      }
+    }
+    // Если точного совпадения нет, ищем частичное
+    if (!matched) {
+      for (let i = 0; i < targetEl.options.length; i++) {
+        if (targetEl.options[i].text.includes(rule.value)) {
+          targetEl.value = targetEl.options[i].value;
+          break;
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Настроить слушатели для правил (динамическое применение)
+ * @param {Object} rules - объект правил
+ */
+function setupRuleListeners(rules) {
+  for (const ruleName in rules) {
+    const rule = rules[ruleName];
+    const triggerEl = getElement(rule.trigger);
+    if (!triggerEl) continue;
+
+    // Сохраняем правило в элементе
+    triggerEl._presetRule = rule;
+
+    // Добавляем слушатель на change
+    triggerEl.addEventListener('change', function onRuleChange() {
+      const r = this._presetRule;
+      if (!r) return;
+
+      const selectedText = getSelectedText(this);
+
+      let conditionMet = false;
+      if (r.condition) {
+        conditionMet = selectedText === r.condition;
+      } else {
+        conditionMet = selectedText.includes(r.conditionText || 'Удалить');
+      }
+
+      if (conditionMet) {
+        applyRuleAction(r);
+        checkRows();
+      }
+    });
+  }
+}
+
+/**
+ * Применить опции ко всем селектам с данным префиксом
+ * @param {string} prefix - префикс (drive, network)
+ * @param {string} optionsVar - имя переменной для хранения (driveOptions, networkOptions)
+ * @param {string} countId - ID input для количества
+ * @param {Function} cloneFn - функция клонирования
+ * @param {Function} updateFn - функция обновления после клонирования
+ * @param {Object} options - опции из пресета
+ */
+function applyOptions(prefix, optionsVar, countId, cloneFn, updateFn, options) {
+  // Сохраняем опции в глобальную переменную
+  window[optionsVar] = options;
+
+  const selects = document.querySelectorAll(`[id^="${prefix}-"]`);
+  selects.forEach(select => {
     const parts = select.id.split('-');
-    const driveIndex = parseInt(parts[1]);
-    const opts = options[`drive-${driveIndex}`];
+    const index = parseInt(parts[1]);
+    const opts = options[`${prefix}-${index}`];
     if (opts) {
       populateSelect(select, opts);
       applySingleLongOption(select);
     }
   });
 
-  // Если driveCount > 1, клонируем строки
-  const driveCount = getNumberValue(CONFIG.ELEMENTS.DRIVE_COUNT) || 1;
-  if (driveCount > 1) {
-    cloneDrives();
+  // Если количество > 1, клонируем строки
+  const count = getNumberValue(countId) || 1;
+  if (count > 1) {
+    cloneFn();
   } else {
+    updateFn();
+  }
+}
+
+/**
+ * Применить drive-опции ко всем drive-селектам
+ * @param {Object} options - опции
+ */
+function applyDriveOptions(options) {
+  applyOptions('drive', 'driveOptions', CONFIG.ELEMENTS.DRIVE_COUNT, cloneDrives, () => {
     updateDrive5();
     updateDrive6();
-  }
+  }, options);
 }
 
 /**
@@ -104,36 +231,9 @@ function applyDriveOptions(options) {
  * @param {Object} options - опции
  */
 function applyNetworkOptions(options) {
-  networkOptions = options;
-
-  const networkSelects = document.querySelectorAll('[id^="network-"]');
-  networkSelects.forEach(select => {
-    const parts = select.id.split('-');
-    const networkIndex = parseInt(parts[1]);
-    const opts = options[`network-${networkIndex}`];
-    if (opts) {
-      populateSelect(select, opts);
-      applySingleLongOption(select);
-    }
-  });
-
-  // Если networkCount > 1, клонируем строки
-  const networkCount = getNumberValue(CONFIG.ELEMENTS.NETWORK_COUNT) || 1;
-  if (networkCount > 1) {
-    cloneNetworks();
-  } else {
+  applyOptions('network', 'networkOptions', CONFIG.ELEMENTS.NETWORK_COUNT, cloneNetworks, () => {
     updateNetwork6AfterClone(1);
-  }
-}
-
-/**
- * Инициализация: запускаем обработчики для "Удалить"
- */
-function initDeleteHandlers() {
-  ['gpu-1', 'hba-1', 'controller-3'].forEach(id => {
-    const el = getElement(id);
-    if (el) el.dispatchEvent(new Event('change'));
-  });
+  }, options);
 }
 
 /**

@@ -14,7 +14,7 @@
   "memory-6": ["≥ 16", "≥ 32", "≥ 64", "≥ 128", "≥ 256"],
   "memory-7": ["< 4", "≥ 4", "≥ 8", "≥ 12", "≥ 14", "≥ 16", "≥ 24", "≥ 32"],
   "select-15": ["MicroSD, SATA , USB , U.2, NVMe", "MicroSD, SATA , USB , U.2, NVMe, SAS", "MicroSD, SATA , USB , U.2, NVMe, SAS, M.2"],
-  "select-16": ["SATA , SAS", "SATA , SAS, NVMe"],
+  "select-16": ["SATA , SAS", "SATA , SAS, NVMe", "NVMe"],
   "select-18": ["≥ 12", "Удалить"],
   "select-19": ["≥ 24", "Удалить"],
   "select-20": ["Удалить", "≥ 2", "≥ 4"],
@@ -174,5 +174,14 @@
     "select-86": "На заводе не ставим и не продаем, только если партнер сделает. Можно удалить, если не актуально",
     "select-87": "На заводе не ставим и не продаем, только если партнер сделает. Можно удалить, если не актуально",
     "select-88": "На заводе не ставим и не продаем, только если партнер сделает. Можно удалить, если не актуально"
+  },
+  "rules": {
+    "controller-1-delete-set-select-16": {
+      "trigger": "controller-1",
+      "conditionText": "Удалить",
+      "target": "select-16",
+      "action": "setValue",
+      "value": "NVMe"
+    }
   }
 }

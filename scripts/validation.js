@@ -146,7 +146,6 @@ function handleController1Delete() {
     }
   } else {
     // controller-1 ≠ "Удалить" → блокируем controller-4 (зелёный), но сохраняем значение
-    const controller4 = getElement('controller-4');
     controller4.disabled = true;
     const row = controller4.closest('tr');
     if (row) {

@@ -215,18 +215,20 @@ function collectDriveValues(allRows) {
   const drive3Values = {};
   const drive5Values = {};
 
-  // drive-3-N
-  allRows.filter(r => r.selectId && /^drive-3/.test(r.selectId)).forEach(row => {
-    const type = extractType(row.selectId);
-    if (!drive3Values[type]) drive3Values[type] = {};
-    drive3Values[type][3] = row.selectedValue;
-  });
+  allRows.forEach(row => {
+    if (!row.selectId) return;
 
-  // drive-5-N
-  allRows.filter(r => r.selectId && /^drive-5/.test(r.selectId)).forEach(row => {
-    const type = extractType(row.selectId);
-    if (!drive5Values[type]) drive5Values[type] = {};
-    drive5Values[type][5] = row.selectedValue;
+    if (/^drive-3/.test(row.selectId)) {
+      const type = extractType(row.selectId);
+      if (!drive3Values[type]) drive3Values[type] = {};
+      drive3Values[type][3] = row.selectedValue;
+    }
+
+    if (/^drive-5/.test(row.selectId)) {
+      const type = extractType(row.selectId);
+      if (!drive5Values[type]) drive5Values[type] = {};
+      drive5Values[type][5] = row.selectedValue;
+    }
   });
 
   return { drive3Values, drive5Values };
