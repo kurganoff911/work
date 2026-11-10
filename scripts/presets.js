@@ -65,6 +65,9 @@ function applyPreset(presetName) {
           // controller-1 обрабатывается отдельно
           handleController1Delete();
 
+          // Инициализация обработчиков корзины (после заполнения селектов)
+          initBasketTypeHandlers();
+
           currentPreset = presetName;
           setStorageValue('currentPreset', presetName);
         })
@@ -89,7 +92,6 @@ function applyPresetRules(rules) {
 
     const selectedText = getSelectedText(triggerEl);
 
-    // Проверка условия
     let conditionMet = false;
     if (rule.condition) {
       conditionMet = selectedText === rule.condition;
@@ -99,7 +101,6 @@ function applyPresetRules(rules) {
 
     if (!conditionMet) continue;
 
-    // Применение действия
     applyRuleAction(rule);
   }
 
@@ -126,7 +127,6 @@ function applyRuleAction(rule) {
   } else if (rule.action === 'clear') {
     targetEl.value = '';
   } else if (rule.action === 'setValue') {
-    // Ищем опцию по точному или частичному совпадению
     let matched = false;
     for (let i = 0; i < targetEl.options.length; i++) {
       if (targetEl.options[i].text === rule.value) {
@@ -135,7 +135,6 @@ function applyRuleAction(rule) {
         break;
       }
     }
-    // Если точного совпадения нет, ищем частичное
     if (!matched) {
       for (let i = 0; i < targetEl.options.length; i++) {
         if (targetEl.options[i].text.includes(rule.value)) {
@@ -157,27 +156,28 @@ function setupRuleListeners(rules) {
     const triggerEl = getElement(rule.trigger);
     if (!triggerEl) continue;
 
-    // Сохраняем правило в элементе
-    triggerEl._presetRule = rule;
+    if (!triggerEl._presetRules) {
+      triggerEl._presetRules = [];
+    }
+    triggerEl._presetRules.push({ ruleName, rule });
 
-    // Добавляем слушатель на change
     triggerEl.addEventListener('change', function onRuleChange() {
-      const r = this._presetRule;
-      if (!r) return;
+      const rules = this._presetRules || [];
+      rules.forEach(({ rule }) => {
+        const selectedText = getSelectedText(this);
 
-      const selectedText = getSelectedText(this);
+        let conditionMet = false;
+        if (rule.condition) {
+          conditionMet = selectedText === rule.condition;
+        } else {
+          conditionMet = selectedText.includes(rule.conditionText || 'Удалить');
+        }
 
-      let conditionMet = false;
-      if (r.condition) {
-        conditionMet = selectedText === r.condition;
-      } else {
-        conditionMet = selectedText.includes(r.conditionText || 'Удалить');
-      }
-
-      if (conditionMet) {
-        applyRuleAction(r);
-        checkRows();
-      }
+        if (conditionMet) {
+          applyRuleAction(rule);
+          checkRows();
+        }
+      });
     });
   }
 }
@@ -185,14 +185,13 @@ function setupRuleListeners(rules) {
 /**
  * Применить опции ко всем селектам с данным префиксом
  * @param {string} prefix - префикс (drive, network)
- * @param {string} optionsVar - имя переменной для хранения (driveOptions, networkOptions)
+ * @param {string} optionsVar - имя переменной для хранения
  * @param {string} countId - ID input для количества
  * @param {Function} cloneFn - функция клонирования
  * @param {Function} updateFn - функция обновления после клонирования
  * @param {Object} options - опции из пресета
  */
 function applyOptions(prefix, optionsVar, countId, cloneFn, updateFn, options) {
-  // Сохраняем опции в глобальную переменную
   window[optionsVar] = options;
 
   const selects = document.querySelectorAll(`[id^="${prefix}-"]`);
@@ -206,7 +205,6 @@ function applyOptions(prefix, optionsVar, countId, cloneFn, updateFn, options) {
     }
   });
 
-  // Если количество > 1, клонируем строки
   const count = getNumberValue(countId) || 1;
   if (count > 1) {
     cloneFn();
@@ -259,7 +257,6 @@ function updateSelects(options) {
     const select = getElement(selectId);
     if (select) {
       populateSelect(select, options[selectId]);
-      // controller-4 управляется через controller-1, не блокируем здесь
       if (selectId !== 'controller-4') {
         select.disabled = options[selectId].length <= 1;
       }

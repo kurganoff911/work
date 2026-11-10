@@ -13,8 +13,8 @@
   "memory-5": ["Да"],
   "memory-6": ["≥ 16", "≥ 32", "≥ 64", "≥ 128", "≥ 256"],
   "memory-7": ["< 4", "≥ 4", "≥ 8", "≥ 12", "≥ 14", "≥ 16", "≥ 24", "≥ 32"],
-  "select-15": ["MicroSD, SATA , USB , U.2, NVMe", "MicroSD, SATA , USB , U.2, NVMe, SAS", "MicroSD, SATA , USB , U.2, NVMe, SAS, M.2"],
-  "select-16": ["SATA , SAS", "SATA , SAS, NVMe", "NVMe"],
+  "select-15": ["MicroSD, SATA , USB , U.2, NVMe, SAS", "MicroSD, USB , U.2, NVMe", "MicroSD, SATA , USB , U.2, NVMe, SAS, M.2"],
+  "select-16": ["SATA , SAS, NVMe", "SATA , SAS", "NVMe"],
   "select-18": ["≥ 12", "Удалить"],
   "select-19": ["≥ 24", "Удалить"],
   "select-20": ["Удалить", "≥ 2", "≥ 4"],
@@ -54,8 +54,8 @@
   "select-54": ["≥ 1"],
   "select-55": ["≥ 6"],
   "select-56": ["Внутренний, на задней панели, на передней панели"],
-  "select-57": ["VGA, DisplayPort, Последовательный порт (COM), сигнально совместимый с RS-232,\n SFF-8654-8i, SFF-8654 4i, VGA на передней панели,\n miniDP на задней панели, Последовательный порт в виде USB Type C на задней панели,\n SFF-8654-8i (Slim SAS x8) и  SFF-8654-4i на бэкплейнах и RAID контроллерах"],
-  "select-58": ["На задней панели - 1 × Serial (разъем USB Type-C, host)"],
+  "select-57": ["VGA, DisplayPort, Последовательный порт (COM), сигнально совместимый с RS-232,\n SFF-8654-8i, SFF-8654 4i"],
+  "select-58": ["На задней панели"],
   "select-59": ["≥ 1", "≥ 2", "≥ 4", "≥ 6"],
   "select-60": ["≥ 1", "≥ 2", "≥ 4", "≥ 6"],
   "select-61": ["Блоки питания"],
@@ -142,8 +142,8 @@
     "select-54": "",
     "select-55": "",
     "select-56": "",
-    "select-57": "",
-    "select-58": "",
+    "select-57": "VGA на передней панели, miniDP на задней панели, Последовательный порт в виде USB Type C на задней панели, SFF-8654-8i (Slim SAS x8) и  SFF-8654-4i на бэкплейнах и RAID контроллерах",
+    "select-58": "1 × Serial (разъем USB Type-C, host)",
     "select-59": "1 шт на RAID контроллере SlimSAS 8i, 2 шт на RAID контроллере SlimSAS 16i, 3 шт на RAID контроллере SlimSAS 24i",
     "select-60": "3 шт на дисковом бэкплейне 12xLFF или 6 шт на дисковом бэкплейне 24xSFF. Опционально по 1 шт на комплектах доп. хранения",
     "select-61": "",
@@ -182,6 +182,13 @@
       "target": "select-16",
       "action": "setValue",
       "value": "NVMe"
+    },
+    "controller-1-delete-set-select-15": {
+      "trigger": "controller-1",
+      "conditionText": "Удалить",
+      "target": "select-15",
+      "action": "setValue",
+      "value": "MicroSD, USB , U.2, NVMe"
     }
   }
 }

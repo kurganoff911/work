@@ -139,3 +139,43 @@ p {
 .input_btn {
   padding: 7px;
 }
+
+/* Радиокнопки типа корзины */
+.chkbx-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.chkbxLbl {
+  margin: 0;
+  white-space: nowrap;
+}
+
+.chkbx {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin: 0;
+}
+
+.chkbx > div {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.chkbx input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  margin: 0;
+}
+
+.chkbx label {
+  cursor: pointer;
+  font-size: 14px;
+  user-select: none;
+  margin: 0;
+}
