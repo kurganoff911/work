@@ -123,7 +123,6 @@ function handleDeleteRule(triggerId, excludeKeys) {
   excludeKeys.forEach(key => {
     toggleSelect(getElement(key), shouldDisable);
   });
-  checkRows();
 }
 
 /**
@@ -220,6 +219,7 @@ function handleNetworkCloneChange(e) {
     const network6Clone = getElement(`network-6-${type}`);
     const isEthernet = getSelectedText(select) === 'Ethernet';
     toggleSelect(network6Clone, isEthernet);
-    checkRows();
   }
+
+  checkRows();
 }

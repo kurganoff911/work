@@ -7,6 +7,9 @@ let currentPreset = getStorageValue('currentPreset', 'R220G3');
 let driveOptions = {};
 let networkOptions = {};
 
+// Ссылка на строку select-85 (для правила gpu-1)
+let row85Ref = null;
+
 /**
  * Применить пресет
  * @param {string} presetName - имя пресета
@@ -37,6 +40,11 @@ function applyPreset(presetName) {
         })
         .then(presetOptions => {
           const allOptions = { ...commonOptions, ...presetOptions };
+
+          // Находим строку select-85 ДО замены select на span
+          const select85Before = document.getElementById('select-85');
+          row85Ref = select85Before ? select85Before.closest('tr') : null;
+
           updateSelects(allOptions);
 
           // Применяем drive-опции
@@ -62,11 +70,38 @@ function applyPreset(presetName) {
             const el = getElement(id);
             if (el) el.dispatchEvent(new Event('change'));
           });
+
           // controller-1 обрабатывается отдельно
           handleController1Delete();
 
+          // GPU-1 = "Удалить" → скрываем select-85
+          const gpu1 = getElement('gpu-1');
+          if (gpu1 && row85Ref) {
+            function isGpu1Delete() {
+              return getSelectedText(gpu1).includes('Удалить');
+            }
+
+            // Обработчик: скрываем ПОСЛЕ checkRows
+            if (!gpu1.disabled) {
+              gpu1.addEventListener('change', function () {
+                checkRows();
+                if (isGpu1Delete()) {
+                  row85Ref.style.display = 'none';
+                } else {
+                  row85Ref.style.display = '';
+                }
+              });
+            }
+          }
+
           // Инициализация обработчиков корзины (после заполнения селектов)
           initBasketTypeHandlers();
+
+          // Применяем правило GPU-1 в самом конце — после всех checkRows
+          const finalGpu1 = getElement('gpu-1');
+          if (finalGpu1 && row85Ref && getSelectedText(finalGpu1).includes('Удалить')) {
+            row85Ref.style.display = 'none';
+          }
 
           currentPreset = presetName;
           setStorageValue('currentPreset', presetName);
@@ -162,8 +197,8 @@ function setupRuleListeners(rules) {
     triggerEl._presetRules.push({ ruleName, rule });
 
     triggerEl.addEventListener('change', function onRuleChange() {
-      const rules = this._presetRules || [];
-      rules.forEach(({ rule }) => {
+      const presetRules = this._presetRules || [];
+      presetRules.forEach(({ rule }) => {
         const selectedText = getSelectedText(this);
 
         let conditionMet = false;
@@ -173,7 +208,22 @@ function setupRuleListeners(rules) {
           conditionMet = selectedText.includes(rule.conditionText || 'Удалить');
         }
 
-        if (conditionMet) {
+        if (rule.action === 'hide') {
+          const targetEl = getElement(rule.target);
+          if (targetEl) {
+            const row = targetEl.closest('tr');
+            if (row) {
+              if (conditionMet) {
+                row.style.display = 'none';
+                row.style.removeProperty('background-color');
+              } else {
+                row.style.display = '';
+                row.style.removeProperty('background-color');
+              }
+            }
+          }
+          checkRows();
+        } else if (conditionMet) {
           applyRuleAction(rule);
           checkRows();
         }

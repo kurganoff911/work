@@ -67,11 +67,13 @@ function initDeleteEventListeners() {
   // GPU: если gpu-1 = "Удалить", блокируем gpu-2...gpu-8
   getElement('gpu-1').addEventListener('change', function () {
     handleDeleteRule('gpu-1', ['gpu-2', 'gpu-3', 'gpu-4', 'gpu-5', 'gpu-6', 'gpu-7', 'gpu-8']);
+    checkRows();
   });
 
   // HBA: если hba-1 = "Удалить", блокируем hba-2, hba-3, hba-4
   getElement('hba-1').addEventListener('change', function () {
     handleDeleteRule('hba-1', ['hba-2', 'hba-3', 'hba-4']);
+    checkRows();
   });
 }
 
