@@ -25,6 +25,15 @@ function checkRows() {
     if (!select) {
       // Если select заменён на span (длинный текст), подсвечиваем зелёным
       if (row.classList.contains('single-option-row')) {
+        // select-85: не показываем если gpu-1 = "Удалить"
+        const firstCell = row.querySelector('td:first-child');
+        if (firstCell && firstCell.textContent.trim() === 'Требования к функциям графического контроллера') {
+          const gpu1 = getElement('gpu-1');
+          if (gpu1 && getSelectedText(gpu1).includes('Удалить')) {
+            row.style.display = 'none';
+            return;
+          }
+        }
         row.style.display = '';
         row.style.backgroundColor = CONFIG.STYLES.DISABLED_ROW;
       }
