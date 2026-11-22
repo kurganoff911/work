@@ -105,6 +105,13 @@ function applyPreset(presetName) {
 
           currentPreset = presetName;
           setStorageValue('currentPreset', presetName);
+
+          // Блокируем sffRadio для пресета 4208
+          const sffRadio = getElement('sffRadio');
+          if (sffRadio) {
+            const presetSelector = getElement(CONFIG.ELEMENTS.PRESET_SELECTOR);
+            sffRadio.disabled = presetSelector && presetSelector.value === '4208';
+          }
         })
         .catch(err => {
           console.error('Ошибка загрузки специфичного файла:', err);

@@ -17,6 +17,11 @@ function initEvents() {
   getElement(CONFIG.ELEMENTS.PRESET_SELECTOR)
     .addEventListener('change', function (e) {
       applyPreset(e.target.value);
+      // Блокируем sffRadio для пресета 4208
+      const sffRadio = getElement('sffRadio');
+      if (sffRadio) {
+        sffRadio.disabled = e.target.value === '4208';
+      }
     });
 
   // Клонирование drive-строк
