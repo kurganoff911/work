@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <link rel="stylesheet" href="./normalize.css">
       <link rel="stylesheet" href="./style.css">
-        <script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
+        <script src="./lib/exceljs.min.js"></script>
         <script src="./lib/docx.js"></script>
         
     <title>Form</title>
@@ -146,14 +146,7 @@
               <td>Интерфейс поддерживаемых накопителей</td>
               <td><select id="select-15"></select></td>
               <td class="fixed"></td>
-              <td class="hint">Выбрать в соответствии со спецификацией. 
-                  <br>Всегда есть:
-                  <br>•	microSD – в модуле управления;
-                  <br>•	NVMe, U.2 – передние и опциональные задние отсеки;
-                  <br>Опционально:
-                  <br>•	SATA и SAS на аппаратных RAID/HBA контроллерах (на материнской плате SATA нет);
-                  <br>•	m.2, если добавлен комплект загрузочного хранения.
-              </td>
+              <td class="hint"></td>
             </tr>
             <tr>
               <td>Интерфейс подключения накопителей информации к дисковому контроллеру</td>
@@ -170,7 +163,7 @@
             <tr>
               <td>Количество SFF (2,5) слотов для накопителей на лицевой панели</td>
               <td><select id="select-19"></select></td>
-              <td class="fixed"></td>
+              <td class="fixed">Штука</td>
               <td class="hint"></td>
             </tr>
             <tr>
