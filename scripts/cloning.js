@@ -25,11 +25,6 @@ function cloneDrives() {
       const select = clone.querySelector('select');
       if (select) {
         select.id = `drive-${index + 1}-${type}`;
-        const options = driveOptions[`drive-${index + 1}`];
-        if (options) {
-          populateSelect(select, options);
-          applySingleLongOption(select);
-        }
       }
 
       // Заменяем "(тип 1)" на "(тип 2)" и т.д.
@@ -97,11 +92,6 @@ function cloneNetworks() {
       const select = clone.querySelector('select');
       if (select) {
         select.id = `network-${index + 1}-${type}`;
-        const options = networkOptions[`network-${index + 1}`];
-        if (options) {
-          populateSelect(select, options);
-          applySingleLongOption(select);
-        }
       }
 
       // Заменяем "(тип 1)" на "(тип 2)" и т.д. (регистронезависимо)

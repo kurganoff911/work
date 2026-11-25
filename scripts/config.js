@@ -11,17 +11,6 @@ const CONFIG = {
     'R220G2': 'R220G2.json'
   },
 
-  // Общие файлы для всех пресетов
-  COMMON_FILES: [
-    'processors.json',
-    'memory.json',
-    'storage.json',
-    'controllers.json',
-    'network.json',
-    'gpu.json',
-    'power.json'
-  ],
-
   // ID элементов DOM
   ELEMENTS: {
     PRESET_SELECTOR: 'presetSelector',

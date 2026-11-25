@@ -3,10 +3,6 @@
 // Текущий пресет
 let currentPreset = getStorageValue('currentPreset', 'R220G3');
 
-// Опции для drive и network
-let driveOptions = {};
-let networkOptions = {};
-
 // Ссылка на строку select-85 (для правила gpu-1)
 let row85Ref = null;
 
@@ -17,108 +13,80 @@ let row85Ref = null;
 function applyPreset(presetName) {
   removeStorageValue('currentPreset');
 
-  // Загружаем общие файлы
-  const commonPromises = CONFIG.COMMON_FILES.map(file =>
-    fetch(CONFIG.PRESETS_PATH + file)
-      .then(res => {
-        if (!res.ok) throw new Error(`Ошибка загрузки ${file}`);
-        return res.json();
-      })
-  );
+  // Загружаем специфичный пресет
+  const presetFile = CONFIG.PRESET_FILES[presetName];
 
-  Promise.all(commonPromises)
-    .then(commonResults => {
-      const commonOptions = Object.assign({}, ...commonResults);
+  fetch(CONFIG.PRESETS_PATH + presetFile)
+    .then(res => {
+      if (!res.ok) throw new Error(`Ошибка загрузки ${presetFile}`);
+      return res.json();
+    })
+    .then(presetOptions => {
+      // Находим строку select-85 ДО замены select на span
+      const select85Before = document.getElementById('select-85');
+      row85Ref = select85Before ? select85Before.closest('tr') : null;
 
-      // Загружаем специфичный пресет
-      const presetFile = CONFIG.PRESET_FILES[presetName];
+      updateSelects(presetOptions);
 
-      fetch(CONFIG.PRESETS_PATH + presetFile)
-        .then(res => {
-          if (!res.ok) throw new Error(`Ошибка загрузки ${presetFile}`);
-          return res.json();
-        })
-        .then(presetOptions => {
-          const allOptions = { ...commonOptions, ...presetOptions };
+      // Применяем подсказки из пресета
+      applyHints(presetOptions.hints || {});
 
-          // Находим строку select-85 ДО замены select на span
-          const select85Before = document.getElementById('select-85');
-          row85Ref = select85Before ? select85Before.closest('tr') : null;
+      // Применяем правила пресета
+      applyPresetRules(presetOptions.rules || {});
 
-          updateSelects(allOptions);
+      // Настраиваем слушатели для динамического применения правил
+      setupRuleListeners(presetOptions.rules || {});
 
-          // Применяем drive-опции
-          applyDriveOptions(commonOptions);
+      // Инициализация: запускаем обработчики для "Удалить"
+      ['gpu-1', 'hba-1', 'controller-3'].forEach(id => {
+        const el = getElement(id);
+        if (el) el.dispatchEvent(new Event('change'));
+      });
 
-          // Применяем network-опции
-          applyNetworkOptions(commonOptions);
+      // controller-1 обрабатывается отдельно
+      handleController1Delete();
 
-          // Проверка и подсветка строк
-          checkRows();
+      // GPU-1 = "Удалить" → скрываем select-85
+      const gpu1 = getElement('gpu-1');
+      if (gpu1 && row85Ref) {
+        function isGpu1Delete() {
+          return getSelectedText(gpu1).includes('Удалить');
+        }
 
-          // Применяем подсказки из пресета
-          applyHints(presetOptions.hints || {});
-
-          // Применяем правила пресета
-          applyPresetRules(presetOptions.rules || {});
-
-          // Настраиваем слушатели для динамического применения правил
-          setupRuleListeners(presetOptions.rules || {});
-
-          // Инициализация: запускаем обработчики для "Удалить"
-          ['gpu-1', 'hba-1', 'controller-3'].forEach(id => {
-            const el = getElement(id);
-            if (el) el.dispatchEvent(new Event('change'));
+        // Обработчик: скрываем ПОСЛЕ checkRows
+        if (!gpu1.disabled) {
+          gpu1.addEventListener('change', function () {
+            checkRows();
+            if (isGpu1Delete()) {
+              row85Ref.style.display = 'none';
+            } else {
+              row85Ref.style.display = '';
+            }
           });
+        }
+      }
 
-          // controller-1 обрабатывается отдельно
-          handleController1Delete();
+      // Инициализация обработчиков корзины (после заполнения селектов)
+      initBasketTypeHandlers();
 
-          // GPU-1 = "Удалить" → скрываем select-85
-          const gpu1 = getElement('gpu-1');
-          if (gpu1 && row85Ref) {
-            function isGpu1Delete() {
-              return getSelectedText(gpu1).includes('Удалить');
-            }
+      // Применяем правило GPU-1 в самом конце — после всех checkRows
+      const finalGpu1 = getElement('gpu-1');
+      if (finalGpu1 && row85Ref && getSelectedText(finalGpu1).includes('Удалить')) {
+        row85Ref.style.display = 'none';
+      }
 
-            // Обработчик: скрываем ПОСЛЕ checkRows
-            if (!gpu1.disabled) {
-              gpu1.addEventListener('change', function () {
-                checkRows();
-                if (isGpu1Delete()) {
-                  row85Ref.style.display = 'none';
-                } else {
-                  row85Ref.style.display = '';
-                }
-              });
-            }
-          }
+      currentPreset = presetName;
+      setStorageValue('currentPreset', presetName);
 
-          // Инициализация обработчиков корзины (после заполнения селектов)
-          initBasketTypeHandlers();
-
-          // Применяем правило GPU-1 в самом конце — после всех checkRows
-          const finalGpu1 = getElement('gpu-1');
-          if (finalGpu1 && row85Ref && getSelectedText(finalGpu1).includes('Удалить')) {
-            row85Ref.style.display = 'none';
-          }
-
-          currentPreset = presetName;
-          setStorageValue('currentPreset', presetName);
-
-          // Блокируем sffRadio для пресета 4208
-          const sffRadio = getElement('sffRadio');
-          if (sffRadio) {
-            const presetSelector = getElement(CONFIG.ELEMENTS.PRESET_SELECTOR);
-            sffRadio.disabled = presetSelector && presetSelector.value === '4208';
-          }
-        })
-        .catch(err => {
-          console.error('Ошибка загрузки специфичного файла:', err);
-        });
+      // Блокируем sffRadio для пресета 4208
+      const sffRadio = getElement('sffRadio');
+      if (sffRadio) {
+        const presetSelector = getElement(CONFIG.ELEMENTS.PRESET_SELECTOR);
+        sffRadio.disabled = presetSelector && presetSelector.value === '4208';
+      }
     })
     .catch(err => {
-      console.error('Ошибка загрузки общих файлов:', err);
+      console.error('Ошибка загрузки пресета:', err);
     });
 }
 
@@ -237,58 +205,6 @@ function setupRuleListeners(rules) {
       });
     });
   }
-}
-
-/**
- * Применить опции ко всем селектам с данным префиксом
- * @param {string} prefix - префикс (drive, network)
- * @param {string} optionsVar - имя переменной для хранения
- * @param {string} countId - ID input для количества
- * @param {Function} cloneFn - функция клонирования
- * @param {Function} updateFn - функция обновления после клонирования
- * @param {Object} options - опции из пресета
- */
-function applyOptions(prefix, optionsVar, countId, cloneFn, updateFn, options) {
-  window[optionsVar] = options;
-
-  const selects = document.querySelectorAll(`[id^="${prefix}-"]`);
-  selects.forEach(select => {
-    const parts = select.id.split('-');
-    const index = parseInt(parts[1]);
-    const opts = options[`${prefix}-${index}`];
-    if (opts) {
-      populateSelect(select, opts);
-      applySingleLongOption(select);
-    }
-  });
-
-  const count = getNumberValue(countId) || 1;
-  if (count > 1) {
-    cloneFn();
-  } else {
-    updateFn();
-  }
-}
-
-/**
- * Применить drive-опции ко всем drive-селектам
- * @param {Object} options - опции
- */
-function applyDriveOptions(options) {
-  applyOptions('drive', 'driveOptions', CONFIG.ELEMENTS.DRIVE_COUNT, cloneDrives, () => {
-    updateDrive5();
-    updateDrive6();
-  }, options);
-}
-
-/**
- * Применить network-опции ко всем network-селектам
- * @param {Object} options - опции
- */
-function applyNetworkOptions(options) {
-  applyOptions('network', 'networkOptions', CONFIG.ELEMENTS.NETWORK_COUNT, cloneNetworks, () => {
-    updateNetwork6AfterClone(1);
-  }, options);
 }
 
 /**
